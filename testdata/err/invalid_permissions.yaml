@@ -5,6 +5,7 @@ permissions:
   unknown: bar
   id-token: read
   models: write
+  vulnerability-alerts: write
   pages: READ
   CHECKS: none
   code-quality: executable
@@ -17,6 +18,7 @@ jobs:
       unknown: bar
       id-token: read
       models: write
+      vulnerability-alerts: write
       pages: READ
       CHECKS: none
       code-quality: executable

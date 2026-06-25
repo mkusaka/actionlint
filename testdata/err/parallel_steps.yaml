@@ -1,0 +1,19 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # 'shell' is not valid on a 'wait' step
+      - wait: build
+        shell: bash
+      # 'working-directory' is not valid on a 'cancel' step
+      - cancel: build
+        working-directory: /tmp
+      # 'shell' is not valid on a 'parallel' step
+      - parallel:
+          - run: echo a
+        shell: bash
+      # invalid step nested in 'parallel' (neither run nor uses) -> recursion must lint it
+      - parallel:
+          - foo: bar

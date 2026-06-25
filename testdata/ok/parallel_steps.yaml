@@ -25,9 +25,9 @@ jobs:
       - name: Maybe background
         run: echo 'maybe'
         background: ${{ github.event_name == 'push' }}
-      # 'cancel' terminates background step(s) that are no longer needed
+      # 'cancel' terminates a single background step that is no longer needed
       - cancel: server
-      - cancel: [server, checkout]
+      - cancel: checkout
       # 'parallel' runs a group of steps in parallel
       - name: Build things in parallel
         if: success()

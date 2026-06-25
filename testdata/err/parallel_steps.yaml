@@ -17,3 +17,5 @@ jobs:
       # invalid step nested in 'parallel' (neither run nor uses) -> recursion must lint it
       - parallel:
           - foo: bar
+      # 'cancel' takes a single step ID, not a list
+      - cancel: [a, b]

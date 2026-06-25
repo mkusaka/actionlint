@@ -504,12 +504,13 @@ func (e *ExecWait) Kind() ExecKind {
 	return ExecKindWait
 }
 
-// ExecCancel is configuration of a step that cancels running background steps. It corresponds to the
+// ExecCancel is configuration of a step that cancels a running background step. It corresponds to the
 // 'cancel' step.
 // https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel/
 type ExecCancel struct {
-	// Names is the list of background step IDs to cancel, given by the 'cancel' field.
-	Names []*String
+	// Name is the ID of the background step to cancel, given by the 'cancel' field. The 'cancel' step
+	// targets a single background step by its ID.
+	Name *String
 }
 
 // Kind returns kind of the step execution.

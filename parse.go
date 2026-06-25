@@ -1239,7 +1239,8 @@ func (p *parser) parseStepExecCancel(entries []workflowMappingEntry) *ExecCancel
 	for _, e := range entries {
 		switch e.id {
 		case "cancel":
-			ret.Names = p.parseStringOrStringSequence("cancel", e.val, false, false)
+			// The 'cancel' step targets a single background step by its ID (not a list).
+			ret.Name = p.parseString(e.val, false)
 		case "id", "if", "name", "env", "continue-on-error", "timeout-minutes":
 			// do nothing
 		default:

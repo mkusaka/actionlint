@@ -19,3 +19,8 @@ jobs:
           - foo: bar
       # 'cancel' takes a single step ID, not a list
       - cancel: [a, b]
+      # 'wait-all' takes no arguments
+      - wait-all: oops
+      # 'wait' and 'wait-all' cannot be combined in one step
+      - wait: build
+        wait-all:

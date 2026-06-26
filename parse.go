@@ -1204,12 +1204,18 @@ func (p *parser) parseStepExecRun(entries []workflowMappingEntry) *ExecRun {
 // https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel/
 func (p *parser) parseStepExecWait(entries []workflowMappingEntry) *ExecWait {
 	ret := &ExecWait{}
+	waitGiven := false
 
 	for _, e := range entries {
 		switch e.id {
 		case "wait":
+			waitGiven = true
 			ret.Names = p.parseStringOrStringSequence("wait", e.val, false, false)
 		case "wait-all":
+			// 'wait-all' waits for all background steps and takes no arguments.
+			if e.val.Tag != "!!null" {
+				p.error(e.val, "\"wait-all\" step takes no arguments")
+			}
 			ret.All = true
 			ret.AllPos = e.key.Pos
 		case "id", "if", "name", "env", "continue-on-error", "timeout-minutes":
@@ -1226,6 +1232,12 @@ func (p *parser) parseStepExecWait(entries []workflowMappingEntry) *ExecWait {
 				"wait-all",
 			})
 		}
+	}
+
+	// 'wait' and 'wait-all' are mutually exclusive: 'wait' targets specific
+	// background steps while 'wait-all' waits for all of them.
+	if waitGiven && ret.All {
+		p.errorAt(ret.AllPos, "\"wait\" and \"wait-all\" cannot be specified in the same step")
 	}
 
 	return ret

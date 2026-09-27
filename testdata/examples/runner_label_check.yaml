@@ -12,7 +12,7 @@ jobs:
           - [self-hosted, linux, x64]
           # OK: Single preset label for self-hosted runner
           - arm64
-          # ERROR: Unknown label "gpu". Custom label must be defined in actionlint.yaml config file
+          # ERROR: Unknown label "gpu". Custom label must be defined in yactionlint.yaml config file
           - gpu
     runs-on: ${{ matrix.runner }}
     steps:

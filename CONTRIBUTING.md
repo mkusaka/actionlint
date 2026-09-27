@@ -1,11 +1,11 @@
-# Policy for actionlint's features
+# Policy for yactionlint's features
 
-- actionlint focuses on detecting mistakes. Feature requests and patches for checks that enforces code style or
+- yactionlint focuses on detecting mistakes. Feature requests and patches for checks that enforces code style or
   some conventions are generally not accepted.
-- actionlint tries to keep [the configuration](docs/config.md) as minimal as possible. Feature requests and patches
+- yactionlint tries to keep [the configuration](docs/config.md) as minimal as possible. Feature requests and patches
   for checks that require user configurations are generally not accepted.
 
-These are important to keep actionlint useful and convenient for everyone. I believe that no one wants to create and
+These are important to keep yactionlint useful and convenient for everyone. I believe that no one wants to create and
 maintain a heavy configuration file just for linting CI workflows.
 
 It's helpful to check if a similar patch has been rejected in the past before submitting it.
@@ -14,7 +14,7 @@ It's helpful to check if a similar patch has been rejected in the past before su
 
 To report a bug, please submit a new ticket on GitHub. It's helpful to search similar tickets before making it.
 
-https://github.com/mkusaka/actionlint/issues/new
+https://github.com/mkusaka/yactionlint/issues/new
 
 Providing a reproducible workflow content is much appreciated. If only a small snippet of workflow is provided or no
 input is provided at all, such issue tickets may get lower priority because they are occasionally time consuming to
@@ -24,7 +24,7 @@ investigate.
 
 Thank you for taking your time to improve this project. To send a patch, please submit a new pull request on GitHub.
 
-https://github.com/mkusaka/actionlint/pulls
+https://github.com/mkusaka/yactionlint/pulls
 
 Before submitting your PR, please ensure the following points:
 
@@ -43,8 +43,8 @@ proficient in English.
 ## Building
 
 ```sh
-go build ./cmd/actionlint
-./actionlint -h
+go build ./cmd/yactionlint
+./yactionlint -h
 ```
 
 or
@@ -59,17 +59,17 @@ make build
 make build SKIP_GO_GENERATE=1
 ```
 
-Since actionlint doesn't use any cgo features, setting `CGO_ENABLED=0` environment variable is recommended to avoid troubles
+Since yactionlint doesn't use any cgo features, setting `CGO_ENABLED=0` environment variable is recommended to avoid troubles
 around linking libc. `make build` does this by default.
 
 ## Testing
 
-[![CI](https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml)
-[![Generate](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml)
-[![Problem Matchers](https://github.com/mkusaka/actionlint/actions/workflows/matcher.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/matcher.yaml)
-[![Download script](https://github.com/mkusaka/actionlint/actions/workflows/download.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/download.yaml)
-[![Release](https://github.com/mkusaka/actionlint/actions/workflows/release.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/release.yaml)
-[![Codecov](https://codecov.io/gh/mkusaka/actionlint/graph/badge.svg)](https://codecov.io/gh/mkusaka/actionlint)
+[![CI](https://github.com/mkusaka/yactionlint/actions/workflows/ci.yaml/badge.svg)](https://github.com/mkusaka/yactionlint/actions/workflows/ci.yaml)
+[![Generate](https://github.com/mkusaka/yactionlint/actions/workflows/generate.yaml/badge.svg)](https://github.com/mkusaka/yactionlint/actions/workflows/generate.yaml)
+[![Problem Matchers](https://github.com/mkusaka/yactionlint/actions/workflows/matcher.yaml/badge.svg)](https://github.com/mkusaka/yactionlint/actions/workflows/matcher.yaml)
+[![Download script](https://github.com/mkusaka/yactionlint/actions/workflows/download.yaml/badge.svg)](https://github.com/mkusaka/yactionlint/actions/workflows/download.yaml)
+[![Release](https://github.com/mkusaka/yactionlint/actions/workflows/release.yaml/badge.svg)](https://github.com/mkusaka/yactionlint/actions/workflows/release.yaml)
+[![Codecov](https://codecov.io/gh/mkusaka/yactionlint/graph/badge.svg)](https://codecov.io/gh/mkusaka/yactionlint)
 
 Run the following command at the root of this repository.
 
@@ -149,20 +149,20 @@ make fuzz FUZZ_FUNC=FuzzParse
 
 ## Make a new release
 
-For a fork release such as v0.0.2:
+For a fork release such as v0.0.3:
 
 1. Update [CHANGELOG.md](./CHANGELOG.md) with the changes in this fork and commit them on `main`.
-2. Run `bash ./scripts/bump-version.bash 0.0.2` to update the download script, commit, tag, and push.
+2. Run `bash ./scripts/bump-version.bash 0.0.3` to update the download script, commit, tag, and push.
 3. If the tag push does not start [the release workflow](.github/workflows/release.yaml), run
-   `gh workflow run release.yaml --ref v0.0.2`.
-4. Check that the workflow publishes the binaries and downloads one using `scripts/download-actionlint.bash`.
+   `gh workflow run release.yaml --ref v0.0.3`.
+4. Check that the workflow publishes the yactionlint binaries and downloads one using `scripts/download-yactionlint.bash`.
 
 ## How to generate the manual
 
-`actionlint.1` manual is generated from [`actionlint.1.ronn`](./man/actionlint.1.ronn) by [ronn](https://github.com/rtomayko/ronn).
+`yactionlint.1` manual is generated from [`yactionlint.1.ronn`](./man/yactionlint.1.ronn) by [ronn](https://github.com/rtomayko/ronn).
 
 ```sh
-ronn ./man/actionlint.1.ronn
+ronn ./man/yactionlint.1.ronn
 ```
 
 or
@@ -215,7 +215,7 @@ automatically with `go generate`. The command runs [`generate-popular-actions`](
 The script also can detect new major releases of popular actions on GitHub by giving `-d` flag.
 
 The [`generate`](.github/workflows/generate.yaml) CI workflow weekly runs to detect new major releases and update
-`popular_actions.go`. Runs can be found [here](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml).
+`popular_actions.go`. Runs can be found [here](https://github.com/mkusaka/yactionlint/actions/workflows/generate.yaml).
 
 ### Maintain `all_webhooks.go`
 
@@ -230,10 +230,10 @@ parses the markdown document, and extracts webhook names and their types. For mo
 
 Updating `all_webhooks.go` is run weekly on CI by [`generate`](.github/workflows/generate.yaml) workflow.
 
-### Maintain `actionlint-matcher.json`
+### Maintain `yactionlint-matcher.json`
 
-[`actionlint-matcher.json`](.github/actionlint-matcher.json) is a matcher configuration to extract error annotations from outputs
-of `actionlint` command. See [the document](docs/usage.md#problem-matchers) for its usage.
+[`yactionlint-matcher.json`](.github/yactionlint-matcher.json) is a matcher configuration to extract error annotations from outputs
+of `yactionlint` command. See [the document](docs/usage.md#problem-matchers) for its usage.
 
 The regular expression is complicated because it can matches to outputs which contain ANSI color escape sequences. So the JSON
 file is not modified manually.
@@ -258,7 +258,7 @@ Update for `availability.go` is run weekly on CI by [`generate`](.github/workflo
 <a id="about-checks-doc"></a>
 ## How to write checks document
 
-The ['Checks' document](./docs/checks.md) is a large document to explain all checks by actionlint.
+The ['Checks' document](./docs/checks.md) is a large document to explain all checks by yactionlint.
 
 This document is maintained with [`check-checks`](./scripts/check-checks) script. This script automatically updates
 the code blocks after `Output:` and the `Playground` links. This script should be run after modifying the document.

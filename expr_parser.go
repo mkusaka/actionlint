@@ -151,7 +151,7 @@ func (p *ExprParser) parseInt() ExprNode {
 
 	// upstream PR/issue: 733
 	if errors.Is(err, strconv.ErrRange) {
-		if f, ferr := strconv.ParseFloat(t.Value, 64); ferr == nil || errors.Is(ferr, strconv.ErrRange) {
+		if f, ferr := strconv.ParseFloat(t.Value, 64); ferr == nil {
 			p.next() // eat int
 			return &FloatNode{f, t}
 		}

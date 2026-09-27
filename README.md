@@ -1,9 +1,9 @@
-actionlint
-==========
+yactionlint
+===========
 [![CI Status][ci-badge]][ci]
 [![API Document][apidoc-badge]][apidoc]
 
-[actionlint][repo] is a static checker for GitHub Actions workflow files. This repository is a fork of [rhysd/actionlint][upstream]. [Try the upstream playground online!][playground]
+[yactionlint][repo] is a static checker for GitHub Actions workflow files. This repository is a fork of [rhysd/actionlint][upstream]. [Try the upstream playground online (external)!][playground]
 
 Features:
 
@@ -17,9 +17,9 @@ Features:
 - **Other several useful checks**; [glob syntax][filter-pattern-doc] validation, dependencies check for `needs:`,
   runner label validation, cron syntax validation, ...
 
-See the [full list][checks] of checks done by actionlint.
+See the [full list][checks] of checks done by yactionlint.
 
-<img src="https://github.com/rhysd/ss/blob/master/actionlint/main.gif?raw=true" alt="actionlint reports 7 errors" width="806" height="492"/>
+<img src="https://github.com/rhysd/ss/blob/master/actionlint/main.gif?raw=true" alt="Upstream actionlint reports 7 errors" width="806" height="492"/>
 
 **Example of broken workflow:**
 
@@ -49,7 +49,7 @@ jobs:
       - run: npm install && npm test
 ```
 
-**actionlint reports 7 errors:**
+**yactionlint reports 7 errors:**
 
 ```
 test.yaml:3:5: unexpected key "branch" for "push" section. expected one of "branches", "branches-ignore", "paths", "paths-ignore", "tags", "tags-ignore", "types", "workflows" [syntax-check]
@@ -84,35 +84,34 @@ test.yaml:22:17: receiver of object dereference "permissions" must be type of ob
 
 ## Quick start
 
-Install `actionlint` with `go install` or download [this fork's release binaries][releases]. See
+Install `yactionlint` with `go install` or download [this fork's release binaries][releases]. See
 [the installation document][install] for details.
 
 ```sh
-go install github.com/mkusaka/actionlint/cmd/actionlint@v0.0.1
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.2
 ```
 
-Basically all you need to do is run the `actionlint` command in your repository. actionlint automatically detects workflows and
-checks errors. actionlint focuses on finding out mistakes. It tries to catch errors as much as possible and make false positives
+Basically all you need to do is run the `yactionlint` command in your repository. yactionlint automatically detects workflows and
+checks errors. yactionlint focuses on finding out mistakes. It tries to catch errors as much as possible and make false positives
 as minimal as possible.
 
 ```sh
-actionlint
+yactionlint
 ```
 
-Another option to try actionlint is [the online playground][playground]. Your browser can run actionlint through WebAssembly.
+The [upstream playground][playground] runs rhysd/actionlint, not this fork; use the CLI to check yactionlint-only syntax.
 
 See [the usage document][usage] for more details.
 
 ## Documents
 
-- [Checks][checks]: Full list of all checks done by actionlint with example inputs, outputs, and playground links.
-- [Installation][install]: Installation instructions. Prebuilt binaries, a Docker image, building from source, a download script
-  (for CI), supports by several package managers are available.
-- [Usage][usage]: How to use `actionlint` command locally or on GitHub Actions, the online playground, an official Docker image,
-  and integrations with reviewdog, Problem Matchers, super-linter, pre-commit, VS Code.
-- [Configuration][config]: How to configure actionlint behavior. Currently, the labels of self-hosted runners, the configuration
+- [Checks][checks]: Full list of all checks done by yactionlint with example inputs, outputs, and links to the external upstream playground.
+- [Installation][install]: Installation instructions for yactionlint. Prebuilt binaries, building from source, and a download script
+  (for CI) are available.
+- [Usage][usage]: How to use `yactionlint` locally or on GitHub Actions, plus external integrations that support upstream actionlint.
+- [Configuration][config]: How to configure yactionlint behavior. Currently, the labels of self-hosted runners, the configuration
   variables, and ignore patterns of errors for each file paths can be set.
-- [Go API][api]: How to use actionlint as Go library.
+- [Go API][api]: How to use the `actionlint` Go library.
 - [References][refs]: Links to resources.
 
 ## Bug reporting
@@ -124,13 +123,13 @@ See the [contribution guide](./CONTRIBUTING.md) for more details.
 
 ## License
 
-actionlint is distributed under [the MIT license](./LICENSE.txt).
+yactionlint is distributed under [the MIT license](./LICENSE.txt).
 
-[ci-badge]: https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml/badge.svg
-[ci]: https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml
-[apidoc-badge]: https://pkg.go.dev/badge/github.com/mkusaka/actionlint.svg
-[apidoc]: https://pkg.go.dev/github.com/mkusaka/actionlint
-[repo]: https://github.com/mkusaka/actionlint
+[ci-badge]: https://github.com/mkusaka/yactionlint/actions/workflows/ci.yaml/badge.svg
+[ci]: https://github.com/mkusaka/yactionlint/actions/workflows/ci.yaml
+[apidoc-badge]: https://pkg.go.dev/badge/github.com/mkusaka/yactionlint.svg
+[apidoc]: https://pkg.go.dev/github.com/mkusaka/yactionlint
+[repo]: https://github.com/mkusaka/yactionlint
 [upstream]: https://github.com/rhysd/actionlint
 [playground]: https://rhysd.github.io/actionlint/
 [shellcheck]: https://github.com/koalaman/shellcheck
@@ -138,11 +137,11 @@ actionlint is distributed under [the MIT license](./LICENSE.txt).
 [syntax-doc]: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 [filter-pattern-doc]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
 [script-injection-doc]: https://docs.github.com/en/actions/reference/security/secure-use#good-practices-for-mitigating-script-injection-attacks
-[releases]: https://github.com/mkusaka/actionlint/releases
-[checks]: https://github.com/mkusaka/actionlint/blob/main/docs/checks.md
-[install]: https://github.com/mkusaka/actionlint/blob/main/docs/install.md
-[usage]: https://github.com/mkusaka/actionlint/blob/main/docs/usage.md
-[config]: https://github.com/mkusaka/actionlint/blob/main/docs/config.md
-[api]: https://github.com/mkusaka/actionlint/blob/main/docs/api.md
-[refs]: https://github.com/mkusaka/actionlint/blob/main/docs/reference.md
-[issue-form]: https://github.com/mkusaka/actionlint/issues/new
+[releases]: https://github.com/mkusaka/yactionlint/releases
+[checks]: https://github.com/mkusaka/yactionlint/blob/main/docs/checks.md
+[install]: https://github.com/mkusaka/yactionlint/blob/main/docs/install.md
+[usage]: https://github.com/mkusaka/yactionlint/blob/main/docs/usage.md
+[config]: https://github.com/mkusaka/yactionlint/blob/main/docs/config.md
+[api]: https://github.com/mkusaka/yactionlint/blob/main/docs/api.md
+[refs]: https://github.com/mkusaka/yactionlint/blob/main/docs/reference.md
+[issue-form]: https://github.com/mkusaka/yactionlint/issues/new

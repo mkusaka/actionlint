@@ -1,86 +1,41 @@
 Installation
 ============
 
-This document describes how to install [actionlint](../docs).
-Package-manager distributions listed below may still contain upstream builds; use this repository's releases or Go install for fork-specific changes.
+This document describes how to install [yactionlint](../README.md).
+
+> [!NOTE]
+> The package-manager distributions below install upstream `actionlint`, not yactionlint. Use this repository's releases, its download script, or Go install for yactionlint.
 
 
-## Windows
+## Upstream actionlint packages (external)
 
-### [Chocolatey](https://chocolatey.org/)
+The following package-manager instructions are for upstream `actionlint`; they do not install yactionlint.
 
-[`actionlint` package][chocolatey] is available in the community repository:
+### Windows
 
-```powershell
-choco install actionlint
-```
+- [Chocolatey](https://chocolatey.org/): `choco install actionlint`
+- [Scoop](https://scoop.sh/): `scoop install actionlint`
+- [Winget](https://learn.microsoft.com/en-us/windows/package-manager/): `winget install actionlint`
 
-### [Scoop](https://scoop.sh/)
+### Linux
 
-[`actionlint` package][scoop] is available in the main bucket:
+- [Arch Linux](https://archlinux.org/): `pacman -S actionlint`
+- [AUR][aur]: `actionlint-bin` and `actionlint-git` packages are available.
+- [Nix](https://nixos.wiki/): `nix-env -iA nixos.actionlint` on NixOS, or
+  `nix-env -iA nixpkgs.actionlint` elsewhere.
 
-```powershell
-scoop install actionlint
-```
+### macOS
 
-### [Winget](https://learn.microsoft.com/en-us/windows/package-manager/)
-
-[`actionlint` package][winget] is available in the winget-pkgs repository:
-
-```powershell
-winget install actionlint
-```
-
-## Linux
-
-### [Arch Linux](https://archlinux.org/)
-
-[`actionlint` package][archlinux] is available in the official repository:
-
-```sh
-pacman -S actionlint
-```
-
-Alternatively actionlint is also available on [AUR][aur]. The packages can be installed via [`paru`][paru] command.
-
-- [actionlint-bin](https://aur.archlinux.org/packages/actionlint-bin)
-- [actionlint-git](https://aur.archlinux.org/packages/actionlint-git)
-
-### [Nix](https://nixos.wiki/)
-
-[`actionlint` package][nixpkgs] is available in the Nix ecosystem:
-
-On NixOS:
-
-```sh
-nix-env -iA nixos.actionlint
-```
-
-On Non NixOS:
-
-```sh
-nix-env -iA nixpkgs.actionlint
-```
-
-## macOS
-
-### [Homebrew][homebrew]
-
-[`actionlint`][formula] formula is provided by Homebrew officially.
+[Homebrew][homebrew] provides the upstream [`actionlint`][formula] formula:
 
 ```sh
 brew install actionlint
 ```
 
-
-> [!WARNING]
-> Since the `actionlint` executable is unsigned, macOS displays a warning and tries to move it to the Trash. To allow it to run,
-> go to 'Settings -> Privacy & Security' and grant the permission.
-
 ## Prebuilt binaries
 
-Download an archive from [this fork's releases page][releases] for your platform, unarchive it,
-and put the executable file in a directory in `$PATH`.
+Download an archive from [yactionlint's releases page][releases] for your platform, unarchive it,
+and put the `yactionlint` executable file in a directory in `$PATH`.
 
 Prebuilt binaries are built at each release by CI for the following OS and arch:
 
@@ -98,96 +53,79 @@ Note that the following targets are not tested since GitHub Actions doesn't supp
 The [`gh`][gh] command can download these binaries. For x86_64 Linux:
 
 ```sh
-gh release download --repo mkusaka/actionlint --pattern '*_linux_amd64.tar.gz' v0.0.1
-tar xf actionlint_0.0.1_linux_amd64.tar.gz
-./actionlint -version
+gh release download --repo mkusaka/yactionlint --pattern '*_linux_amd64.tar.gz' v0.0.2
+tar xf yactionlint_0.0.2_linux_amd64.tar.gz
+./yactionlint -version
 ```
 
 Optionally, verify the [attestation][attestations] of the downloaded artifact:
 
 ```sh
-gh attestation verify -R mkusaka/actionlint actionlint_0.0.1_linux_amd64.tar.gz
+gh attestation verify -R mkusaka/yactionlint yactionlint_0.0.2_linux_amd64.tar.gz
 ```
 
 <a id="download-script"></a>
 ## Download script
 
-To install this fork's release with one command, run [the download script](../scripts/download-actionlint.bash). It downloads the latest
-binary (`actionlint.exe` on Windows and `actionlint` on other OSes) to the current directory.
+To install yactionlint with one command, run [the download script](../scripts/download-yactionlint.bash). It downloads the latest
+binary (`yactionlint.exe` on Windows and `yactionlint` on other OSes) to the current directory.
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
 ```
 
 To install a specific release, pass its version as the first argument:
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) 0.0.1
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash) 0.0.2
 ```
 
-This script downloads `actionlint` (or `actionlint.exe` on Windows) binary to the current working directory. When you need to put
+This script downloads `yactionlint` (or `yactionlint.exe` on Windows) binary to the current working directory. When you need to put
 the downloaded binary to some other directory, please give the directory path to the 2nd command line argument. The following
 example installs the latest version to `/usr/bin`.
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) latest /usr/bin
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash) latest /usr/bin
 ```
 
-For the usage of actionlint on GitHub Actions, see [the usage document](usage.md#on-github-actions).
+For the usage of yactionlint on GitHub Actions, see [the usage document](usage.md#on-github-actions).
 
 ## Docker image
 
-See [the usage document](./usage.md#docker) to know how to install and use an official actionlint Docker image.
+The [upstream actionlint Docker image](usage.md#docker) is external and does not contain yactionlint. For yactionlint, use the
+release binary above or build a container from this repository.
 
-## Cross-platform version managers
+## External version managers for upstream actionlint
+
+The [asdf][asdf] and [mise][mise] integrations below install upstream `actionlint`, not yactionlint.
 
 ### asdf
 
-You can install actionlint with the [asdf version manager][asdf] using the [asdf-actionlint][asdf-plugin] plugin, which
-automates the process of installing (and switching between) various versions of GitHub release binaries. With asdf already
-installed, run these commands to install actionlint:
+The [asdf-actionlint][asdf-plugin] plugin manages upstream `actionlint` release binaries:
 
 ```bash
-# Add actionlint plugin
 asdf plugin add actionlint
-
-# Show all installable versions
-asdf list-all actionlint
-
-# Install specific version
 asdf install actionlint latest
-
-# Set a version globally (on your ~/.tool-versions file)
 asdf global actionlint latest
 ```
 
 ### mise
 
-You can install actionlint with the [mise-en-place][mise] which automates the process of installing (and switching
-between) various versions of GitHub release binaries. With mise already installed, run these commands to install
-actionlint:
-
 ```bash
-# Show all installable versions
-mise ls-remote actionlint
-
-# Install specific version
 mise install actionlint@latest
-
-# Set a version globally (on your ~/.config/mise/config.toml file)
 mise use -g actionlint@latest
 ```
 
 ## Build from source
 
-Recent [Go][] toolchain is necessary to build actionlint from source. Last two major versions of Go are supported.
+Recent [Go][] toolchain is necessary to build yactionlint from source. Last two major versions of Go are supported.
 
 ```sh
-# Install the latest version from this fork
-go install github.com/mkusaka/actionlint/cmd/actionlint@v0.0.1
+# Install yactionlint v0.0.2
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.2
 
-# Install the head of this fork's main branch
-go install github.com/mkusaka/actionlint/cmd/actionlint@main
+# Install the head of yactionlint's main branch
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@main
 ```
 
 ---
@@ -196,17 +134,11 @@ go install github.com/mkusaka/actionlint/cmd/actionlint@main
 
 [formula]: https://formulae.brew.sh/formula/actionlint
 [homebrew]: https://brew.sh/
-[releases]: https://github.com/mkusaka/actionlint/releases
+[releases]: https://github.com/mkusaka/yactionlint/releases
 [gh]: https://docs.github.com/en/github-cli/github-cli/about-github-cli
 [attestations]: https://docs.github.com/en/actions/concepts/security/artifact-attestations
 [Go]: https://golang.org/
 [asdf]: https://asdf-vm.com/
 [asdf-plugin]: https://github.com/crazy-matt/asdf-actionlint
-[chocolatey]: https://community.chocolatey.org/packages/actionlint
-[scoop]: https://scoop.sh/#/apps?q=actionlint&s=0&d=1&o=true
-[winget]: https://github.com/microsoft/winget-pkgs/tree/master/manifests/r/rhysd/actionlint
-[archlinux]: https://archlinux.org/packages/extra/x86_64/actionlint/
 [aur]: https://aur.archlinux.org/
-[paru]: https://github.com/Morganamilo/paru
-[nixpkgs]: https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/analysis/actionlint/default.nix
 [mise]: https://github.com/jdx/mise

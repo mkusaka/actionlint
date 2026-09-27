@@ -10,7 +10,7 @@ fi
 
 set -x
 
-script="$(pwd)/scripts/download-actionlint.bash"
+script="$(pwd)/scripts/download-yactionlint.bash"
 temp_dir="$(mktemp -d)"
 trap 'popd && rm -rf $temp_dir' EXIT
 pushd "$temp_dir"
@@ -25,37 +25,37 @@ if [ -n "$GITHUB_ACTION" ]; then
         echo "'executable' step output is not set: '${out}'" >&2
     fi
 fi
-out="$(./actionlint -version)"
+out="$(./yactionlint -version)"
 if [[ "$out" != *'installed by downloading from release page'* ]]; then
-    echo "Output from ./actionlint -version is unexpected: '${out}'" >&2
+    echo "Output from ./yactionlint -version is unexpected: '${out}'" >&2
     exit 1
 fi
-rm -f ./actionlint
+rm -f ./yactionlint
 
 # Specify only version
-bash "$script" '0.0.1'
-out="$(./actionlint -version | head -n 1)"
-if [[ "$out" != '0.0.1' ]]; then
+bash "$script" '0.0.2'
+out="$(./yactionlint -version | head -n 1)"
+if [[ "$out" != '0.0.2' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi
-rm -f ./actionlint
+rm -f ./yactionlint
 
 # Specify only a download directory
 mkdir ./test1
 bash "$script" latest ./test1
-out="$(./test1/actionlint -version)"
+out="$(./test1/yactionlint -version)"
 if [[ "$out" != *'installed by downloading from release page'* ]]; then
-    echo "Output from ./actionlint -version is unexpected: '${out}'" >&2
+    echo "Output from ./test1/yactionlint -version is unexpected: '${out}'" >&2
     exit 1
 fi
 rm -rf ./test1
 
 # Specify both version and a download directory
 mkdir ./test2
-bash "$script" '0.0.1' ./test2
-out="$(./test2/actionlint -version | head -n 1)"
-if [[ "$out" != '0.0.1' ]]; then
+bash "$script" '0.0.2' ./test2
+out="$(./test2/yactionlint -version | head -n 1)"
+if [[ "$out" != '0.0.2' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi

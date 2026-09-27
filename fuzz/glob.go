@@ -1,9 +1,9 @@
 //go:build gofuzz
 
-package actionlint_fuzz
+package yactionlint_fuzz
 
 import (
-	"github.com/mkusaka/actionlint"
+	"github.com/mkusaka/yactionlint"
 )
 
 func FuzzGlobGitRef(data []byte) int {

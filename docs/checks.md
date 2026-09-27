@@ -1,7 +1,7 @@
-All checks done by actionlint
+All checks done by yactionlint
 =============================
 
-This document describes all checks done by [actionlint](..) with example inputs, outputs, and playground links.
+This document describes all checks done by [yactionlint](../README.md) with example inputs, outputs, and links to the external upstream playground.
 
 List of checks:
 
@@ -44,8 +44,8 @@ List of checks:
 - [Deprecated inputs usage](#deprecated-inputs-usage)
 - [YAML anchors](#yaml-anchors)
 
-Note that actionlint focuses on catching mistakes in workflow files. If you want some general code style checks, please consider
-using a general YAML checker like [yamllint][].
+Note that yactionlint focuses on catching mistakes in workflow files. If you want some general code style checks, please consider
+using a general YAML checker like [yamllint][]. All `Playground` links below open the external upstream actionlint playground.
 
 <a id="check-unexpected-keys"></a>
 ## Unexpected keys
@@ -947,16 +947,16 @@ From command line:
 
 ```sh
 # Enable some optional rules
-SHELLCHECK_OPTS='--enable=avoid-nullary-conditions' actionlint
+SHELLCHECK_OPTS='--enable=avoid-nullary-conditions' yactionlint
 
 # Disable some rules
-SHELLCHECK_OPTS='--exclude=SC2129' actionlint
+SHELLCHECK_OPTS='--exclude=SC2129' yactionlint
 ```
 
 On GitHub Actions:
 
 ```yaml
-- run: actionlint
+- run: yactionlint
   env:
     SHELLCHECK_OPTS: --exclude=SC2129
 ```
@@ -1636,7 +1636,7 @@ jobs:
           - [self-hosted, linux, x64]
           # OK: Single preset label for self-hosted runner
           - arm64
-          # ERROR: Unknown label "gpu". Custom label must be defined in actionlint.yaml config file
+          # ERROR: Unknown label "gpu". Custom label must be defined in yactionlint.yaml config file
           - gpu
     runs-on: ${{ matrix.runner }}
     steps:
@@ -1675,8 +1675,8 @@ to run the job. So specifying proper labels at `runs-on:` is important.
 actionlint checks proper label is used at `runs-on:` configuration. Even if an expression is used in the section like
 `runs-on: ${{ matrix.foo }}`, actionlint parses the expression and resolves the possible values, then validates the values.
 
-When you define some custom labels for your self-hosted runner, actionlint does not know the labels. Please set the label
-names in [`actionlint.yaml` configuration file](config.md) to let actionlint know them.
+When you define some custom labels for your self-hosted runner, yactionlint does not know the labels. Please set the label
+names in [`yactionlint.yaml` configuration file](config.md) to let yactionlint know them.
 
 In addition to checking label values, actionlint checks combinations of labels. `runs-on:` section can be an array that contains
 multiple labels. In this case, a runner which has all the labels will be selected. However, those labels combinations can have
@@ -3190,7 +3190,7 @@ test.yaml:0:0: could not parse as YAML: yaml: unknown anchor 'credentials' refer
 [Installation](install.md) | [Usage](usage.md) | [Configuration](config.md) | [Go API](api.md) | [References](reference.md)
 
 [yamllint]: https://github.com/adrienverge/yamllint
-[issue-form]: https://github.com/mkusaka/actionlint/issues/new
+[issue-form]: https://github.com/mkusaka/yactionlint/issues/new
 [syntax-doc]: https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
 [filter-pattern-doc]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
 [shellcheck]: https://github.com/koalaman/shellcheck
@@ -3222,8 +3222,8 @@ test.yaml:0:0: could not parse as YAML: yaml: unknown anchor 'credentials' refer
 [actions-cache]: https://github.com/actions/cache
 [permissions-doc]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions
 [perm-config-doc]: https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#permissions
-[generate-webhook-events]: https://github.com/mkusaka/actionlint/tree/main/scripts/generate-webhook-events
-[generate-popular-actions]: https://github.com/mkusaka/actionlint/tree/main/scripts/generate-popular-actions
+[generate-webhook-events]: https://github.com/mkusaka/yactionlint/tree/main/scripts/generate-webhook-events
+[generate-popular-actions]: https://github.com/mkusaka/yactionlint/tree/main/scripts/generate-popular-actions
 [issue-25]: https://github.com/rhysd/actionlint/issues/25
 [issue-40]: https://github.com/rhysd/actionlint/issues/40
 [security-doc]: https://docs.github.com/en/actions/reference/security/secure-use

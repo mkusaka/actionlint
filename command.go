@@ -33,34 +33,34 @@ func printUsageHeader(out io.Writer) {
 		b = "v" + v
 	}
 
-	fmt.Fprintf(out, `Usage: actionlint [FLAGS] [FILES...] [-]
+	fmt.Fprintf(out, `Usage: yactionlint [FLAGS] [FILES...] [-]
 
-  actionlint is a linter for GitHub Actions workflow files.
+  yactionlint is a linter for GitHub Actions workflow files.
 
-  To check all YAML files in current repository, just run actionlint without
+  To check all YAML files in current repository, just run yactionlint without
   arguments. It automatically finds the nearest '.github/workflows' directory:
 
-    $ actionlint
+    $ yactionlint
 
   To check specific files, pass the file paths as arguments:
 
-    $ actionlint file1.yaml file2.yaml
+    $ yactionlint file1.yaml file2.yaml
 
   To check content which is not saved in file yet (e.g. output from some
   command), pass - argument. It reads stdin and checks it as workflow file:
 
-    $ actionlint -
+    $ yactionlint -
 
   To serialize errors into JSON, use -format option. It allows to format error
   messages flexibly with Go template syntax.
 
-    $ actionlint -format '{{json .}}'
+    $ yactionlint -format '{{json .}}'
 
 Documents:
 
-  - List of checks: https://github.com/mkusaka/actionlint/tree/%s/docs/checks.md
-  - Usage:          https://github.com/mkusaka/actionlint/tree/%s/docs/usage.md
-  - Configuration:  https://github.com/mkusaka/actionlint/tree/%s/docs/config.md
+  - List of checks: https://github.com/mkusaka/yactionlint/tree/%s/docs/checks.md
+  - Usage:          https://github.com/mkusaka/yactionlint/tree/%s/docs/usage.md
+  - Configuration:  https://github.com/mkusaka/yactionlint/tree/%s/docs/config.md
 
 Flags:
 `, b, b, b)
@@ -139,7 +139,7 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&opts.Oneline, "oneline", false, "Use one line per one error. Useful for reading error messages from programs")
 	flags.StringVar(&opts.Format, "format", "", "Custom template to format error messages in Go template syntax. See the usage documentation for more details")
 	flags.StringVar(&opts.ConfigFile, "config-file", "", "File path to config file")
-	flags.BoolVar(&initConfig, "init-config", false, "Generate default config file at .github/actionlint.yaml in current project")
+	flags.BoolVar(&initConfig, "init-config", false, "Generate default config file at .github/yactionlint.yaml in current project")
 	flags.BoolVar(&noColor, "no-color", false, "Disable colorful output")
 	flags.BoolVar(&color, "color", false, "Always enable colorful output. This is useful to force colorful outputs")
 	flags.BoolVar(&opts.Verbose, "verbose", false, "Enable verbose output")

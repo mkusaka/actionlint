@@ -1,4 +1,5 @@
 version: 2
+project_name: yactionlint
 
 release:
   draft: false
@@ -10,8 +11,9 @@ before:
 
 builds:
   - <<: &build_defaults
-      main: ./cmd/actionlint
-      ldflags: -s -w -X github.com/mkusaka/actionlint.version={{.Version}} -X "github.com/mkusaka/actionlint.installedFrom=installed by downloading from release page"
+      main: ./cmd/yactionlint
+      binary: yactionlint
+      ldflags: -s -w -X github.com/mkusaka/yactionlint.version={{.Version}} -X "github.com/mkusaka/yactionlint.installedFrom=installed by downloading from release page"
       env:
         - CGO_ENABLED=0
     id: macos
@@ -34,7 +36,7 @@ builds:
     goarch: [386, amd64]
 
 checksum:
-  name_template: "actionlint_{{.Version}}_checksums.txt"
+  name_template: "yactionlint_{{.Version}}_checksums.txt"
   algorithm: sha256
 
 archives:
@@ -43,7 +45,7 @@ archives:
         - README.md
         - LICENSE.txt
         - docs
-        - man/actionlint.1
+        - man/yactionlint.1
     id: nix
     ids: [macos, linux, freebsd]
     formats: [tar.gz]

@@ -54,8 +54,8 @@ else
 fi
 
 echo 'Generating and copying manual'
-make ./man/actionlint.1.html
-cp ./man/actionlint.1.html ./playground-dist/man.html
+make ./man/yactionlint.1.html
+cp ./man/yactionlint.1.html ./playground-dist/man.html
 
 echo 'Switching to gh-pages branch'
 git checkout gh-pages

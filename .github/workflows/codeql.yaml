@@ -30,7 +30,7 @@ jobs:
       - name: Build Go sources
         run: |
           set -x
-          go build -v ./cmd/actionlint
+          go build -v -o yactionlint ./cmd/yactionlint
           GOOS=js GOARCH=wasm go build -v -o ./playground/main.wasm ./playground
       - uses: github/codeql-action/analyze@v4
         with:

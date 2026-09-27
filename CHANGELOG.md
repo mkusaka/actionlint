@@ -1,3 +1,9 @@
+<a id="v0.0.2"></a>
+# [v0.0.2](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.2) - 2026-09-28
+
+- Rename the fork, executable, Go module, release archives, and download script to `yactionlint`. The v0.0.1 release retains the former `actionlint` names.
+- Continue to identify [rhysd/actionlint](https://github.com/rhysd/actionlint) as the upstream project.
+
 <a id="v0.0.1"></a>
 # [v0.0.1](https://github.com/mkusaka/actionlint/releases/tag/v0.0.1) - 2026-09-28
 

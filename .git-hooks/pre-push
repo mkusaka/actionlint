@@ -12,6 +12,6 @@ make build SKIP_GO_GENERATE=true
 make test SKIP_GO_GENERATE=true
 make lint SKIP_GO_GENERATE=true
 
-if [ -x ./actionlint ]; then
-    ./actionlint
+if [ -x ./yactionlint ]; then
+    ./yactionlint
 fi

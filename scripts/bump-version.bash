@@ -43,9 +43,9 @@ function sed_() {
 }
 
 usage_doc='./docs/usage.md'
-download_script='./scripts/download-actionlint.bash'
+download_script='./scripts/download-yactionlint.bash'
 tag="v${version}"
-job_url='https://github.com/mkusaka/actionlint/actions/workflows/release.yaml'
+job_url='https://github.com/mkusaka/yactionlint/actions/workflows/release.yaml'
 
 echo "Bumping up version to ${version} (tag: ${tag})"
 
@@ -55,7 +55,7 @@ sed_ "s/version=\"[0-9]+\\.[0-9]+\\.[0-9]+\"/version=\"${version}\"/" "$download
 echo "Updating $usage_doc"
 sed_ "\
     s/    rev: v[0-9]+\.[0-9]+\.[0-9]+/    rev: v${version}/; \
-    s/ actionlint@[0-9]+\.[0-9]+\.[0-9]+/ actionlint@${version}/g; \
+    s/ yactionlint@[0-9]+\.[0-9]+\.[0-9]+/ yactionlint@${version}/g; \
     " "$usage_doc"
 
 echo 'Creating a version bump commit and a version tag'

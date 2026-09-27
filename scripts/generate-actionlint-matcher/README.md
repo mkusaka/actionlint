@@ -1,18 +1,18 @@
-generate-actionlint-matcher
-===========================
+generate-yactionlint-matcher
+============================
 
-This script generates [`actionlint-matcher.json`](../../.github/actionlint-matcher.json).
+This script generates [`yactionlint-matcher.json`](../../.github/yactionlint-matcher.json).
 
 ## Usage
 
 ```sh
-make .github/actionlint-matcher.json
+make .github/yactionlint-matcher.json
 ```
 
 or directly run the script
 
 ```sh
-node ./scripts/generate-actionlint-matcher/main.mjs .github/actionlint-matcher.json
+node ./scripts/generate-actionlint-matcher/main.mjs .github/yactionlint-matcher.json
 ```
 
 ## Test
@@ -21,7 +21,7 @@ node ./scripts/generate-actionlint-matcher/main.mjs .github/actionlint-matcher.j
 node ./scripts/generate-actionlint-matcher/test.mjs
 ```
 
-The test uses test data at `./scripts/generate-actionlint-matcher/test/*.txt`. They should be updated when actionlint changes
+The test uses test data at `./scripts/generate-actionlint-matcher/test/*.txt`. Update them when yactionlint changes
 the default error message format. To update them:
 
 ```sh

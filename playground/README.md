@@ -1,7 +1,7 @@
-Playground for actionlint
-=========================
+Playground for yactionlint
+==========================
 
-This is a development directory for the upstream [actionlint playground](https://rhysd.github.io/actionlint/).
+This is a development directory for yactionlint's local playground. It is derived from the upstream [actionlint playground](https://rhysd.github.io/actionlint/), which is external.
 
 The playground is built with HTML/CSS/TypeScript/Wasm. All dependencies are defined in `package.json` and managed by `npm`.
 Tasks for development are defined in [`Makefile`](./Makefile).

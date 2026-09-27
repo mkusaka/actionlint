@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mkusaka/actionlint"
+	"github.com/mkusaka/yactionlint"
 )
 
 func ExampleLinter() {
@@ -102,7 +102,7 @@ func ExampleCommand() {
 
 	// Run the command end-to-end. Note that given args should contain program name
 	workflow := filepath.Join(".github", "workflows", "release.yaml")
-	status := cmd.Main([]string{"actionlint", "-shellcheck=", "-pyflakes=", workflow})
+	status := cmd.Main([]string{"yactionlint", "-shellcheck=", "-pyflakes=", workflow})
 
 	fmt.Println("Exited with status", status)
 	// Output: Exited with status 0

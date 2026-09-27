@@ -2,7 +2,7 @@ name: Problem Matchers
 on:
   push:
     paths:
-      - 'scripts/generate-actionlint-matcher/*.js'
+      - 'scripts/generate-actionlint-matcher/*.mjs'
       - 'testdata/examples/*.out'
       - 'testdata/err/*.out'
     branches:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   matcher-test:
-    name: Test generate-actionlint-matcher
+    name: Test yactionlint matcher generator
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,15 +28,15 @@ jobs:
           cache-dependency-path: ./playground/package-lock.json
       - name: Update test data
         run: make ./scripts/generate-actionlint-matcher/test/* SKIP_GO_GENERATE=true
-      - name: Test actionlint-matcher.json
+      - name: Test yactionlint-matcher.json
         run: node ./scripts/generate-actionlint-matcher/test.mjs
-      - name: Ensure .github/actionlint-matcher.json is up-to-date
+      - name: Ensure .github/yactionlint-matcher.json is up-to-date
         run: |
-          make .github/actionlint-matcher.json
+          make .github/yactionlint-matcher.json
           if git diff --quiet; then
             echo 'OK'
           else
-            echo 'ERROR! .github/actionlint-matcher.json is outdated. Update it by "make .github/actionlint-matcher.json"' >&2
+            echo 'ERROR! .github/yactionlint-matcher.json is outdated. Update it by "make .github/yactionlint-matcher.json"' >&2
             set -x
             git diff
             exit 1

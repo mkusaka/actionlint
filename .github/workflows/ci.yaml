@@ -46,17 +46,17 @@ jobs:
         if: ${{ matrix.os == 'windows-11-arm' }}
       - run: go tool cover -func ./coverage.txt
       # Check build without CGO
-      - run: go build ./cmd/actionlint
+      - run: go build -o yactionlint ./cmd/yactionlint
         env:
           # Note: -race requires cgo
           CGO_ENABLED: 0
       # Set -race for catching data races on dog fooding (#333)
-      - run: go build -race ./cmd/actionlint
+      - run: go build -race -o yactionlint ./cmd/yactionlint
         if: ${{ matrix.os != 'windows-11-arm' }}
       - name: Dog fooding 🐶
         run: |
-          echo "::add-matcher::.github/actionlint-matcher.json"
-          ./actionlint -color
+          echo "::add-matcher::.github/yactionlint-matcher.json"
+          ./yactionlint -color
       - uses: codecov/codecov-action@v6
         with:
           env_vars: OS
@@ -103,7 +103,7 @@ jobs:
           pyflakes --version
       - name: Check Go sources are formatted
         run: |
-          diffs="$(gofmt -d ./*.go ./cmd/actionlint/*.go ./scripts/*/*.go ./playground/*.go)"
+          diffs="$(gofmt -d ./*.go ./cmd/yactionlint/*.go ./scripts/*/*.go ./playground/*.go)"
           if [[ "$diffs" != "" ]]; then
             echo "$diffs" >&2
             exit 1

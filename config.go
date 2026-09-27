@@ -51,7 +51,7 @@ type PathConfig struct {
 	Ignore IgnorePatterns `yaml:"ignore"`
 }
 
-// Config is configuration of actionlint. This struct instance is parsed from "actionlint.yaml"
+// Config is configuration of yactionlint. This struct instance is parsed from "yactionlint.yaml"
 // file usually put in ".github" directory.
 type Config struct {
 	// SelfHostedRunner is configuration for self-hosted runner.
@@ -86,7 +86,7 @@ func (cfg *Config) PathConfigs(path string) []PathConfig {
 	return ret
 }
 
-// ParseConfig parses the given bytes as an actionlint config file. When deserializing the YAML file
+// ParseConfig parses the given bytes as a yactionlint config file. When deserializing the YAML file
 // or the config validation fails, this function returns an error.
 func ParseConfig(b []byte) (*Config, error) {
 	var c Config
@@ -102,7 +102,7 @@ func ParseConfig(b []byte) (*Config, error) {
 	return &c, nil
 }
 
-// ReadConfigFile reads actionlint config file (actionlint.yaml) from the given file path.
+// ReadConfigFile reads yactionlint config file (yactionlint.yaml) from the given file path.
 func ReadConfigFile(path string) (*Config, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -115,10 +115,10 @@ func ReadConfigFile(path string) (*Config, error) {
 	return c, nil
 }
 
-// loadRepoConfig reads config file from the repository's .github/actionlint.yml or
-// .github/actionlint.yaml.
+// loadRepoConfig reads config file from the repository's .github/yactionlint.yml or
+// .github/yactionlint.yaml.
 func loadRepoConfig(root string) (*Config, error) {
-	for _, f := range []string{"actionlint.yaml", "actionlint.yml"} {
+	for _, f := range []string{"yactionlint.yaml", "yactionlint.yml"} {
 		p := filepath.Join(root, ".github", f)
 		c, err := ReadConfigFile(p)
 		switch {

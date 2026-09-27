@@ -209,7 +209,7 @@ func (rule *RuleRunnerLabel) verifyRunnerLabel(label *String) runnerOSCompat {
 	for _, k := range known {
 		m, err := path.Match(k, l)
 		if err != nil {
-			rule.Errorf(label.Pos, "label pattern %q is an invalid glob. kindly check list of labels in actionlint.yaml config file: %v", k, err)
+			rule.Errorf(label.Pos, "label pattern %q is an invalid glob. kindly check list of labels in yactionlint.yaml config file: %v", k, err)
 			return compatInvalid
 		}
 		if m {
@@ -219,7 +219,7 @@ func (rule *RuleRunnerLabel) verifyRunnerLabel(label *String) runnerOSCompat {
 
 	rule.Errorf(
 		label.Pos,
-		"label %q is unknown. available labels are %s. if it is a custom label for self-hosted runner, set list of labels in actionlint.yaml config file",
+		"label %q is unknown. available labels are %s. if it is a custom label for self-hosted runner, set list of labels in yactionlint.yaml config file",
 		label.Value,
 		quotesAll(
 			allGitHubHostedRunnerLabels,

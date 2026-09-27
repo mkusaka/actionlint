@@ -1,29 +1,29 @@
 Usage
 =====
 
-This document describes how to use [actionlint](..).
+This document describes how to use [yactionlint](../README.md).
 
-## `actionlint` command
+## `yactionlint` command
 
-With no argument, actionlint finds all workflow files in the current repository and checks them.
-
-```sh
-actionlint
-```
-
-When paths to YAML workflow files are given as arguments, actionlint checks them.
+With no argument, yactionlint finds all workflow files in the current repository and checks them.
 
 ```sh
-actionlint path/to/workflow1.yaml path/to/workflow2.yaml
+yactionlint
 ```
 
-When `-` argument is given, actionlint reads inputs from stdin and checks it as workflow source.
+When paths to YAML workflow files are given as arguments, yactionlint checks them.
 
 ```sh
-cat path/to/workflow.yaml | actionlint -
+yactionlint path/to/workflow1.yaml path/to/workflow2.yaml
 ```
 
-To know all flags and options, see an output of `actionlint -h` or [the online command manual][cmd-manual].
+When `-` argument is given, yactionlint reads inputs from stdin and checks it as workflow source.
+
+```sh
+cat path/to/workflow.yaml | yactionlint -
+```
+
+To know all flags and options, run `yactionlint -h`.
 
 ### Ignore some errors
 
@@ -31,15 +31,15 @@ To ignore some errors, `-ignore` option offers to filter errors by messages usin
 The regular expression syntax is the same as [RE2][re2].
 
 ```sh
-actionlint -ignore 'label ".+" is unknown' -ignore '".+" is potentially untrusted'
+yactionlint -ignore 'label ".+" is unknown' -ignore '".+" is potentially untrusted'
 ```
 
 `-shellcheck` and `-pyflakes` specifies file paths of executables. Setting empty string to them disables `shellcheck` and
-`pyflakes` rules. As a bonus, disabling them makes actionlint much faster Since these external linter integrations spawn many
+`pyflakes` rules. As a bonus, disabling them makes yactionlint much faster Since these external linter integrations spawn many
 processes.
 
 ```sh
-actionlint -shellcheck= -pyflakes=
+yactionlint -shellcheck= -pyflakes=
 ```
 
 <a id="format"></a>
@@ -52,7 +52,7 @@ Before explaining the formatting details, let's see some examples.
 #### Example: Serialized into JSON
 
 ```sh
-actionlint -format '{{json .}}'
+yactionlint -format '{{json .}}'
 ```
 
 Output:
@@ -64,7 +64,7 @@ Output:
 #### Example: Markdown
 
 ````sh
-actionlint -format '{{range $err := .}}### Error at line {{$err.Line}}, col {{$err.Column}} of `{{$err.Filepath}}`\n\n{{$err.Message}}\n\n```\n{{$err.Snippet}}\n```\n\n{{end}}'
+yactionlint -format '{{range $err := .}}### Error at line {{$err.Line}}, col {{$err.Column}} of `{{$err.Filepath}}`\n\n{{$err.Message}}\n\n```\n{{$err.Snippet}}\n```\n\n{{end}}'
 ````
 
 Output:
@@ -83,7 +83,7 @@ property "platform" is not defined in object type {os: string}
 #### Example: Serialized in [JSON Lines][jsonl]
 
 ```sh
-actionlint -format '{{range $err := .}}{{json $err}}{{end}}'
+yactionlint -format '{{range $err := .}}{{json $err}}{{end}}'
 ```
 
 Output:
@@ -97,7 +97,7 @@ Output:
 #### Example: [Error annotation][ga-annotate-error] on GitHub Actions
 
 ````sh
-actionlint -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}' -ignore 'SC2016:'
+yactionlint -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}' -ignore 'SC2016:'
 ````
 
 Output:
@@ -143,7 +143,7 @@ The error object has the following fields.
 | `{{$err.EndColumn}}` | Column number of the error's end position (1-based)   | `23`                                                             |
 
 Functions called in `{{ }}` placeholder are template actions. There are many actions defined by Go standard library. In addition,
-there are a few custom actions defined by actionlint. Most useful action would be `json` as we already used it in the above JSON
+there are a few custom actions defined by yactionlint. Most useful action would be `json` as we already used it in the above JSON
 example. List of all custom actions are as follows:
 
 | Action           | Description                                                                      | Example usage                             |
@@ -152,7 +152,7 @@ example. List of all custom actions are as follows:
 | `replace x y z`  | Replace string `y` with `z` in `x`                                               | `{{replace $err.Filepath "\\" "/"}}`      |
 | `toPascalCase x` | Convert `x` into PascalCase (e.g. 'foo-bar' to 'FooBar')                         | `{{toPascalCase $err.Kind}}`              |
 | `allKinds`       | Return an array of kind objects. The kind object is explained in the below table | `{{range $ = allKinds}}{{$.Name}}{{end}}` |
-| `getVersion`     | Return the version of actionlint as string                                       | `{{getVersion}}`                          |
+| `getVersion`     | Return the version of yactionlint as string                                      | `{{getVersion}}`                          |
 
 The kind object returned from `allKinds` action has the following fields.
 
@@ -180,7 +180,7 @@ Note that special characters escaped with backslash like `\n` in the format stri
 
 ### Exit status
 
-`actionlint` command exits with one of the following exit statuses.
+`yactionlint` command exits with one of the following exit statuses.
 
 | Status | Description                                             |
 |--------|---------------------------------------------------------|
@@ -190,29 +190,29 @@ Note that special characters escaped with backslash like `\n` in the format stri
 | `3`    | The command failed due to some fatal error              |
 
 <a id="on-github-actions"></a>
-## Use actionlint on GitHub Actions
+## Use yactionlint on GitHub Actions
 
-Preparing `actionlint` executable with the download script is recommended. See [the instruction](install.md#download-script) for
+Preparing `yactionlint` executable with the download script is recommended. See [the instruction](install.md#download-script) for
 more details. It sets an absolute file path of downloaded executable to `executable` output in order to use the executable in the
 following steps easily.
 
-Here is an example workflow using this fork's release binary. Use `shell: bash` since the default shell for Windows runners is `pwsh`.
+Here is an example workflow using yactionlint's release binary. Use `shell: bash` since the default shell for Windows runners is `pwsh`.
 
 ```yaml
 name: Lint GitHub Actions workflows
 on: [push, pull_request]
 
 jobs:
-  actionlint:
+  yactionlint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Download actionlint
-        id: get_actionlint
-        run: bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
+      - name: Download yactionlint
+        id: get_yactionlint
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
         shell: bash
       - name: Check workflow files
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        run: ${{ steps.get_yactionlint.outputs.executable }} -color
         shell: bash
 ```
 
@@ -221,21 +221,22 @@ Or simply download the executable and run it in one step:
 ```yaml
 - name: Check workflow files
   run: |
-    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
-    ./actionlint -color
+    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
+    ./yactionlint -color
   shell: bash
 ```
 
-The download script allows to specify the version of actionlint and the download directory. Try to give `--help` argument
+The download script allows to specify the version of yactionlint and the download directory. Try to give `--help` argument
 to the script for more usage details.
 
 If you want to enable [shellcheck integration](checks.md#check-shellcheck-integ), install `shellcheck` command. Note that
 shellcheck is [pre-installed on Ubuntu worker][preinstall-ubuntu].
 
-If you want to [annotate errors][ga-annotate-error] from actionlint on GitHub, consider using
+If you want to [annotate errors][ga-annotate-error] from yactionlint on GitHub, consider using
 [Problem Matchers](#problem-matchers).
 
-If you prefer the existing upstream Docker image to a downloaded executable, using [the actionlint Docker image](#docker) is another option.
+The existing upstream Docker image is an external alternative for upstream actionlint, not yactionlint. See
+[the upstream actionlint Docker image](#docker).
 
 ```yaml
 name: Lint GitHub Actions workflows
@@ -254,7 +255,7 @@ jobs:
 
 ## Online playground
 
-Thanks to WebAssembly, the upstream actionlint playground is available on your browser. It never sends any data outside your browser.
+Thanks to WebAssembly, the upstream actionlint playground is available externally in your browser. It never sends any data outside your browser.
 
 https://rhysd.github.io/actionlint/
 
@@ -263,42 +264,33 @@ the workflow content in the code editor, the results will be updated on the fly.
 table moves a cursor to position of the error in the code editor.
 
 <a id="docker"></a>
-## [Docker][docker] image
+## [Upstream actionlint Docker image (external)][docker]
 
-[The existing upstream Docker image][docker-image] contains `actionlint` and its dependencies (shellcheck and pyflakes).
-For this fork's syntax support, use the fork's binary or build a container from this repository.
+[The upstream actionlint Docker image][docker-image] contains `actionlint` and its dependencies (shellcheck and pyflakes).
+It does not contain yactionlint. For yactionlint, use the fork's binary or build a container from this repository.
 
-Available tags are:
+Available upstream tags are:
 
-- `actionlint:latest`: Latest stable version of actionlint. This image is recommended.
-- `actionlint:{version}`: Specific version of actionlint. (e.g. `actionlint:1.7.12`)
-
-Just run the image with `docker run`:
+- `actionlint:latest`: Latest stable version of upstream actionlint.
+- `actionlint:{version}`: A specific upstream actionlint version (for example, `actionlint:1.7.12`).
 
 ```sh
 docker run --rm rhysd/actionlint:latest -version
 ```
 
-To check all workflows in your repository, mount your repository's root directory as a volume and run actionlint in the mounted
-directory. When you are at a root directory of your repository:
+To check all workflows in your repository with upstream actionlint, mount your repository's root directory as a volume:
 
 ```sh
 docker run --rm -v $(pwd):/repo --workdir /repo rhysd/actionlint:latest -color
 ```
 
-To check a file with actionlint in a Docker container, pass the file content via stdin and use `-` argument:
+To check a file with upstream actionlint in a Docker container, pass the file content via stdin:
 
 ```sh
 cat /path/to/workflow.yml | docker run --rm -i rhysd/actionlint:latest -color -
 ```
 
-Or mount the workflows directory and pass the paths as arguments:
-
-```sh
-docker run --rm -v /path/to/workflows:/workflows rhysd/actionlint:latest -color /workflows/ci.yml
-```
-
-## Using actionlint from Go program
+## Using yactionlint from a Go program
 
 Go APIs are available. See [the Go API document](api.md) for more details.
 
@@ -306,144 +298,46 @@ Go APIs are available. See [the Go API document](api.md) for more details.
 <a id="tools-integ"></a>
 ## Tools integration
 
+Unless noted otherwise, the third-party integrations below support upstream `actionlint`, not yactionlint. They do not install
+or invoke yactionlint.
+
 ### reviewdog
 
-[reviewdog][] is an automated review tool for various code hosting services. It officially [supports actionlint][reviewdog-actionlint].
-You can check errors from actionlint easily with inline review comments at pull request review.
+[reviewdog][] officially [supports upstream actionlint][reviewdog-actionlint]. Use yactionlint's download script separately if
+you need the fork's checks.
 
-The usage is easy. Run `reviewdog/action-actionlint` action in your workflow as follows.
-
-```yaml
-name: reviewdog
-on: [pull_request]
-jobs:
-  actionlint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: reviewdog/action-actionlint@v1
-```
-
-<a id="problem-matchers"></a>
 ### Problem Matchers
 
-[Problem Matchers][problem-matchers] is a feature to extract GitHub Actions annotations from terminal outputs of linters.
+Copy [yactionlint-matcher.json][yactionlint-matcher] to `.github/yactionlint-matcher.json` in your repository.
 
-Copy [actionlint-matcher.json][actionlint-matcher] to `.github/actionlint-matcher.json` in your repository.
-
-Then enable the matcher using `add-matcher` command before running `actionlint` in the step of your workflow.
+Then enable the matcher using `add-matcher` command before running yactionlint in the step of your workflow.
 
 ```yaml
 - name: Check workflow files
   run: |
-    echo "::add-matcher::.github/actionlint-matcher.json"
-    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
-    ./actionlint -color
+    echo "::add-matcher::.github/yactionlint-matcher.json"
+    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
+    ./yactionlint -color
   shell: bash
 ```
 
 When you change your workflow and the changed line causes a new error, CI will annotate the diff with the extracted error message.
 
-<img src="https://github.com/rhysd/ss/blob/master/actionlint/problem-matcher.png?raw=true" alt="annotation by Problem Matchers" width="715" height="221"/>
+<img src="https://github.com/rhysd/ss/blob/master/actionlint/problem-matcher.png?raw=true" alt="Upstream actionlint Problem Matcher annotation" width="715" height="221"/>
 
 ### super-linter
 
-[super-linter][] is a Bash script for a simple combination of various linters, provided by GitHub. It has support for actionlint.
-Running super-linter in your repository automatically runs actionlint.
-
-To ignore some errors, please add `-ignore` option by using [`GITHUB_ACTIONS_COMMAND_ARGS` environment variable][super-linter-env-var].
-Please see [super-linter/super-linter#1852](https://github.com/super-linter/super-linter/issues/1852) for the discussion.
+[super-linter][] supports upstream actionlint only. It does not run yactionlint.
 
 ### pre-commit
 
-[pre-commit][] is a framework for managing and maintaining multi-language Git pre-commit hooks. actionlint is available as a
-pre-commit hook to check workflow files in `.github/workflows/` directory.
+[pre-commit][] provides upstream actionlint hooks; they do not install or run yactionlint.
 
-Add this to your `.pre-commit-config.yaml` in your repository:
+### Editors and Trunk
 
-```yaml
----
-repos:
-  - repo: https://github.com/mkusaka/actionlint
-    rev: v0.0.1
-    hooks:
-      - id: actionlint
-```
-
-The `actionlint-system` hook is also available when `actionlint` is installed separately.
-
-| Hook ID | Explanation |
-|-|-|
-| `actionlint` | Automatically installs `actionlint` command in isolated `$GOPATH` directory using [Go toolchain][go-install]. |
-| `actionlint-system` | Uses system-installed `actionlint` command. The command is necessary to be [installed manually](install.md). |
-
-### VS Code
-
-[Linter extension][vsc-extension] for [VS Code][vscode] is available. The extension automatically detects `.github/workflows`
-directory, runs `actionlint` command, and reports errors in the code editor while editing workflow files.
-
-### Emacs
-
-Plugins for both [Flycheck][emacs-flycheck] and [Flymake][emacs-flymake] are available via [MELPA][emacs-melpa].
-
-Their respective repositories are [flycheck-actionlint][emacs-flycheck-extension] and [flymake-actionlint][emacs-flymake-extension].
-
-### Vim and Neovim
-
-[nvim-lint][] supports actionlint on Neovim. The plugin automatically and asynchronously runs actionlint and notifies errors
-on the fly when you edit GitHub Actions CI workflows. Please read the plugin's documentation for more details.
-
-[ALE][vim-ale] supports actionlint on Vim and Neovim. Similar to nvim-lint, The plugin automatically and asynchronously runs
-actionlint and notifies errors on the fly when you edit GitHub Actions CI workflows. Please read the plugin's documentation for
-more details.
-
-### Pulsar Edit
-
-A [Linter package][pulsar-linter] for [Pulsar Edit][pulsar] is available. The package automatically detects a `workflows`
-directory, executes the `actionlint` command on any detected GitHub Actions files within the directory, and reports returned
-information in the code editor display tab while editing workflow files.
-
-### Nova
-
-[Nova.app][nova] is a MacOS only editor and IDE. The [Actionlint for Nova][nova-extension] allows you to get inline feedback
-while editing actions.
-
-### trunk
-
-[trunk][trunk-io] is an extendable superlinter with a builtin language server and preexisting issue detection. Actionlint is
-integrated [here](https://github.com/trunk-io/plugins).
-
-Once you have [initialized trunk in your repo](https://docs.trunk.io/docs/check-get-started), to enable at the latest actionlint
-version, just run:
-
-```bash
-trunk check enable actionlint
-```
-
-or if you'd like a specific version:
-
-```bash
-trunk check enable actionlint@1.7.12
-```
-
-or modify `.trunk/trunk.yaml` in your repository to contain:
-
-```yaml
-lint:
-  enabled:
-    - actionlint@1.7.12
-```
-
-Then just run:
-
-```bash
-trunk check
-```
-
-and it will check your modified files via actionlint, if applicable, and show you the results. Trunk also will detect preexisting
-issues and highlight only the newly added actionlint issues. For more information, check the [trunk docs][trunk-docs].
-
-You can also see actionlint issues inline in VS Code via the [Trunk VS Code extension][trunk-vscode].
+The [VS Code extension][vsc-extension], Emacs packages, [nvim-lint][], [ALE][vim-ale], the [Pulsar linter][pulsar-linter],
+[Actionlint for Nova][nova-extension], and [Trunk][trunk-io] integrations target upstream actionlint. Configure yactionlint
+manually if your editor or tool supports a custom executable.
 
 ---
 
@@ -460,7 +354,7 @@ You can also see actionlint issues inline in VS Code via the [Trunk VS Code exte
 [problem-matchers]: https://github.com/actions/toolkit/blob/master/docs/problem-matchers.md
 [super-linter]: https://github.com/github/super-linter
 [super-linter-env-var]: https://github.com/super-linter/super-linter#environment-variables
-[actionlint-matcher]: https://raw.githubusercontent.com/mkusaka/actionlint/main/.github/actionlint-matcher.json
+[yactionlint-matcher]: https://raw.githubusercontent.com/mkusaka/yactionlint/main/.github/yactionlint-matcher.json
 [preinstall-ubuntu]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
 [pre-commit]: https://pre-commit.com
 [go-install]: https://go.dev/doc/install

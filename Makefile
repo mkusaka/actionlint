@@ -1,4 +1,4 @@
-SRCS := $(filter-out %_test.go, $(wildcard *.go cmd/actionlint/*.go)) go.mod go.sum .git-hooks/.timestamp
+SRCS := $(filter-out %_test.go, $(wildcard *.go cmd/yactionlint/*.go)) go.mod go.sum .git-hooks/.timestamp
 TESTS := $(filter %_test.go, $(wildcard *.go))
 TOOL := $(filter %_test.go, $(wildcard scripts/*/*.go))
 TESTDATA := $(wildcard \
@@ -18,12 +18,12 @@ GO_GEN_SRCS := scripts/generate-popular-actions/main.go \
 ifeq ($(OS),Windows_NT)
 	SHELL := powershell.exe
 	.SHELLFLAGS := -NoProfile -ExecutionPolicy Bypass -Command
-	TARGET = actionlint.exe
+	TARGET = yactionlint.exe
 	TOUCH = powershell -NoProfile -ExecutionPolicy Bypass scripts/touch.ps1
 	# It's hard to prepare C toolchain for CGO on Windows
 	RACE =
 else
-	TARGET = actionlint
+	TARGET = yactionlint
 	TOUCH = touch
 	RACE = -race
 endif
@@ -69,42 +69,44 @@ endif
 
 $(TARGET): $(SRCS)
 ifeq ($(OS),Windows_NT)
-	go build ./cmd/actionlint
+	go build ./cmd/yactionlint
 else
-	CGO_ENABLED=0 go build ./cmd/actionlint
+	CGO_ENABLED=0 go build ./cmd/yactionlint
 endif
 
 b build: $(TARGET)
 
-actionlint_fuzz-fuzz.zip:
+yactionlint_fuzz-fuzz.zip:
 	go-fuzz-build ./fuzz
 
-fuzz: actionlint_fuzz-fuzz.zip
-	go-fuzz -bin ./actionlint_fuzz-fuzz.zip -func $(FUZZ_FUNC)
+fuzz: yactionlint_fuzz-fuzz.zip
+	go-fuzz -bin ./yactionlint_fuzz-fuzz.zip -func $(FUZZ_FUNC)
 
-man/actionlint.1 man/actionlint.1.html: man/actionlint.1.ronn
-	ronn man/actionlint.1.ronn
+man/yactionlint.1: man/yactionlint.1.ronn
+	ronn --roff man/yactionlint.1.ronn
+man/yactionlint.1.html: man/yactionlint.1.ronn
+	ronn --html man/yactionlint.1.ronn
 
-man: man/actionlint.1
+man: man/yactionlint.1
 
 bench:
 	go test -bench Lint -benchmem
 
-.github/actionlint-matcher.json: scripts/generate-actionlint-matcher/object.mjs
-	node ./scripts/generate-actionlint-matcher/main.mjs .github/actionlint-matcher.json
+.github/yactionlint-matcher.json: scripts/generate-actionlint-matcher/object.mjs
+	node ./scripts/generate-actionlint-matcher/main.mjs .github/yactionlint-matcher.json
 
 scripts/generate-actionlint-matcher/test/escape.txt: $(TARGET)
-	./actionlint -color ./testdata/err/one_error.yaml > ./scripts/generate-actionlint-matcher/test/escape.txt || true
+	./yactionlint -color ./testdata/err/one_error.yaml > ./scripts/generate-actionlint-matcher/test/escape.txt || true
 scripts/generate-actionlint-matcher/test/no_escape.txt: $(TARGET)
-	./actionlint -no-color ./testdata/err/one_error.yaml > ./scripts/generate-actionlint-matcher/test/no_escape.txt || true
+	./yactionlint -no-color ./testdata/err/one_error.yaml > ./scripts/generate-actionlint-matcher/test/no_escape.txt || true
 scripts/generate-actionlint-matcher/test/want.json: $(TARGET)
-	./actionlint -format '{{json .}}' ./testdata/err/one_error.yaml > scripts/generate-actionlint-matcher/test/want.json || true
+	./yactionlint -format '{{json .}}' ./testdata/err/one_error.yaml > scripts/generate-actionlint-matcher/test/want.json || true
 
 CHANGELOG.md: .bumptimestamp
 	changelog-from-release > CHANGELOG.md
 
 c clean:
-	rm -f ./$(TARGET) ./.testtimestamp ./.linttimestamp ./actionlint_fuzz-fuzz.zip ./man/actionlint.1 ./man/actionlint.1.html ./actionlint-workflow-ast
+	rm -f ./$(TARGET) ./.testtimestamp ./.linttimestamp ./yactionlint_fuzz-fuzz.zip ./man/yactionlint.1
 	rm -rf ./corpus ./crashers
 
 .git-hooks/.timestamp: .git-hooks/pre-push

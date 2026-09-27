@@ -2,12 +2,12 @@ name: Download script
 on:
   push:
     paths:
-      - scripts/download-actionlint.bash
-      - scripts/test-download-actionlint.bash
+      - scripts/download-yactionlint.bash
+      - scripts/test-download-yactionlint.bash
   pull_request:
     paths:
-      - scripts/download-actionlint.bash
-      - scripts/test-download-actionlint.bash
+      - scripts/download-yactionlint.bash
+      - scripts/test-download-yactionlint.bash
   workflow_dispatch:
 
 jobs:
@@ -19,5 +19,5 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - run: ./scripts/test-download-actionlint.bash
+      - run: ./scripts/test-download-yactionlint.bash
         shell: bash

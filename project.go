@@ -67,7 +67,7 @@ func (p *Project) Knows(path string) bool {
 }
 
 // Config returns config object of the GitHub project repository. The config file was read from
-// ".github/actionlint.yaml" or ".github/actionlint.yml" when this Project instance was created.
+// ".github/yactionlint.yaml" or ".github/yactionlint.yml" when this Project instance was created.
 // When no config was found, this method returns nil.
 func (p *Project) Config() *Config {
 	// Note: Calling this method must be thread safe (#333)

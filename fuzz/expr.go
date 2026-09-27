@@ -1,11 +1,11 @@
 //go:build gofuzz
 
-package actionlint_fuzz
+package yactionlint_fuzz
 
 import (
 	"unicode/utf8"
 
-	"github.com/mkusaka/actionlint"
+	"github.com/mkusaka/yactionlint"
 )
 
 func FuzzExprParse(data []byte) int {

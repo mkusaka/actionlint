@@ -1,16 +1,16 @@
 ---
-- id: actionlint
+- id: yactionlint
   name: Lint GitHub Actions workflow files
-  description: Runs actionlint to lint GitHub Actions workflow files
+  description: Runs yactionlint to lint GitHub Actions workflow files
   language: golang
   types: ["yaml"]
   files: ^\.github/workflows/
-  entry: actionlint
+  entry: yactionlint
   minimum_pre_commit_version: 3.0.0
-- id: actionlint-system
+- id: yactionlint-system
   name: Lint GitHub Actions workflow files
-  description: Runs system-installed actionlint to lint GitHub Actions workflow files
+  description: Runs system-installed yactionlint to lint GitHub Actions workflow files
   language: system
   types: ["yaml"]
   files: ^\.github/workflows/
-  entry: actionlint
+  entry: yactionlint

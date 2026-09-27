@@ -698,7 +698,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 	if len(sema.configVars) == 0 {
 		sema.errorf(
 			n,
-			"no configuration variable is allowed since the variables list is empty in actionlint.yaml. you may forget adding the variable %q to the list",
+			"no configuration variable is allowed since the variables list is empty in yactionlint.yaml. you may forget adding the variable %q to the list",
 			n.Property,
 		)
 		return
@@ -712,7 +712,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 
 	sema.errorf(
 		n,
-		"undefined configuration variable %q. defined configuration variables in actionlint.yaml are %s",
+		"undefined configuration variable %q. defined configuration variables in yactionlint.yaml are %s",
 		n.Property,
 		sortedQuotes(sema.configVars),
 	)

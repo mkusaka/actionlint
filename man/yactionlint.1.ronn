@@ -1,16 +1,16 @@
-actionlint(1) -- static checker for GitHub Actions workflow files
-=================================================================
+yactionlint(1) -- static checker for GitHub Actions workflow files
+==========================================================
 
 ## SYNOPSIS
 
-`actionlint` [<flags>] <br>
-`actionlint` [<flags>] <file>...<br>
-`actionlint` [<flags>] -<br>
+`yactionlint` [<flags>] <br>
+`yactionlint` [<flags>] <file>...<br>
+`yactionlint` [<flags>] -<br>
 
 
 ## DESCRIPTION
 
-**actionlint** is a linter for GitHub Actions workflow files.
+**yactionlint** is a linter for GitHub Actions workflow files.
 
 Features:
 
@@ -27,24 +27,24 @@ Features:
 
 ## USAGE
 
-To check all workflow files in the current repository, just run **actionlint** without arguments.
+To check all workflow files in the current repository, just run **yactionlint** without arguments.
 It automatically finds the nearest `.github/workflows` directory:
 
-    $ actionlint
+    $ yactionlint
 
 To check specific workflow files, pass the file paths as arguments:
 
-    $ actionlint file1.yaml file2.yaml
+    $ yactionlint file1.yaml file2.yaml
 
 To check a content which is not saved in file yet (e.g. output from some command), pass **-**
 argument. It reads stdin and checks it as workflow file:
 
-    $ actionlint -
+    $ yactionlint -
 
 To serialize errors into JSON, use **-format** option. It allows to format error messages flexibly
 with Go template syntax.
 
-    $ actionlint -format '{{json .}}'
+    $ yactionlint -format '{{json .}}'
 
 
 ## FLAGS
@@ -67,7 +67,7 @@ with Go template syntax.
     example, `-ignore A -ignore B` ignores errors whose message includes "A" OR "B".
 
   * `-init-config`:
-    Generate default config file at `.github/actionlint.yaml` in current project
+    Generate default config file at `.github/yactionlint.yaml` in current project
 
   * `-no-color`:
     Disable colorful output
@@ -102,51 +102,50 @@ Documents for more details are available online.
 
 ### Checks
 
-https://github.com/mkusaka/actionlint/blob/main/docs/checks.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/checks.md
 
-Full list of all checks done by actionlint with example inputs, outputs, and playground links.
+Full list of all checks done by yactionlint with example inputs, outputs, and links to the external upstream playground.
 
 ### Installation
 
-https://github.com/mkusaka/actionlint/blob/main/docs/install.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/install.md
 
-Installation instructions. Prebuilt binaries, Homebrew package, building from source, a Docker
-image, a download script (for CI) are available.
+Installation instructions for yactionlint. Prebuilt binaries, building from source, and a download script (for CI) are available.
+Package-manager distributions documented there install upstream actionlint, not yactionlint.
 
 ### Usage
 
-https://github.com/mkusaka/actionlint/blob/main/docs/usage.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/usage.md
 
-How to use `actionlint` command locally or on GitHub Actions, the online playground, an official
-Docker image, and integrations with reviewdog, Problem Matchers, super-linter, pre-commit.
+How to use `yactionlint` locally or on GitHub Actions, plus external integrations for upstream actionlint.
 
 ### Configuration
 
-https://github.com/mkusaka/actionlint/blob/main/docs/config.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/config.md
 
-How to configure actionlint behavior by the configuration file `actionlint.yaml`.
+How to configure yactionlint behavior by the configuration file `yactionlint.yaml`.
 
 ### Go API
 
-https://github.com/mkusaka/actionlint/blob/main/docs/api.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/api.md
 
-How to use actionlint as Go library.
+How to use yactionlint's `actionlint` package as Go library.
 
 ### References
 
-https://github.com/mkusaka/actionlint/blob/main/docs/reference.md
+https://github.com/mkusaka/yactionlint/blob/main/docs/reference.md
 
 Links to resources.
 
 ## USAGE ON GITHUB ACTIONS
 
-Use the download script to download this fork's release:
+Use the download script to download yactionlint's release:
 
-https://github.com/mkusaka/actionlint/blob/main/scripts/download-actionlint.bash
+https://github.com/mkusaka/yactionlint/blob/main/scripts/download-yactionlint.bash
 
 On GitHub Actions, it sets a file path to the executable in the `executable` output for use in later steps.
 
-Here is an example of simple workflow to run actionlint on GitHub Actions. Please ensure `shell: bash`
+Here is an example of simple workflow to run yactionlint on GitHub Actions. Please ensure `shell: bash`
 since the default shell for Windows runners is `pwsh`.
 
 ```
@@ -154,16 +153,16 @@ name: Lint GitHub Actions workflows
 on: [push, pull_request]
 
 jobs:
-  actionlint:
+  yactionlint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download actionlint
-        id: get_actionlint
-        run: bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
+      - name: Download yactionlint
+        id: get_yactionlint
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
         shell: bash
       - name: Check workflow files
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        run: ${{ steps.get_yactionlint.outputs.executable }} -color
         shell: bash
 ```
 
@@ -172,15 +171,13 @@ or simply run
 ```yaml
 - name: Check workflow files
   run: |
-    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
-    ./actionlint -color
+    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash)
+    ./yactionlint -color
   shell: bash
 ```
 
 
-## EXIT STATUS
-
-`actionlint` command exits with one of the following exit statuses.
+`yactionlint` command exits with one of the following exit statuses.
 
   - **0**: It ran successfully and no problem was found.
   - **1**: It ran successfully and some problem was found.
@@ -190,7 +187,7 @@ or simply run
 
 ## PLAYGROUND
 
-Thanks to WebAssembly, actionlint playground is available on your browser. It never sends any data
+Thanks to WebAssembly, the upstream actionlint playground is available externally in your browser. It never sends any data
 to outside of the browser.
 
 The upstream playground is available externally:
@@ -208,13 +205,13 @@ position of the error in the code editor.
 Please visit issues page to see known bugs. If you found a new bug or have some feature request,
 please report by making a new issue.
 
-https://github.com/mkusaka/actionlint/issues
+https://github.com/mkusaka/yactionlint/issues
 
 
 ## COPYRIGHT
 
-**actionlint** is licensed under the MIT License: `Copyright (c) 2021 rhysd`
+**yactionlint** is licensed under the MIT License: `Copyright (c) 2021 rhysd`
 
-https://github.com/mkusaka/actionlint/blob/main/LICENSE.txt
+https://github.com/mkusaka/yactionlint/blob/main/LICENSE.txt
 
 <!-- vim: set ft=markdown: -->

@@ -836,6 +836,12 @@ func TestParseExpressionLargeIntegerLiterals(t *testing.T) {
 			}
 		})
 	}
+
+	// A literal outside the finite float64 range is not a usable number.
+	_, err := NewExprParser().Parse(NewExprLexer(strings.Repeat("9", 310) + "}}"))
+	if err == nil {
+		t.Fatal("integer literal larger than float64 range was accepted")
+	}
 }
 
 func TestParseExpressionTokenPosition(t *testing.T) {

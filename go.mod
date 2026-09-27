@@ -1,4 +1,4 @@
-module github.com/mkusaka/actionlint
+module github.com/mkusaka/yactionlint
 
 go 1.25.0
 

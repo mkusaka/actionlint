@@ -330,7 +330,7 @@ func TestLinterLintProject(t *testing.T) {
 			opts := LinterOptions{
 				WorkingDir: repo,
 			}
-			cfg := filepath.Join(repo, "actionlint.yaml")
+			cfg := filepath.Join(repo, "yactionlint.yaml")
 			if _, err := os.Stat(cfg); err == nil {
 				opts.ConfigFile = cfg
 			}

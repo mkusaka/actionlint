@@ -4,37 +4,37 @@ set -e -o pipefail
 
 function usage() {
     echo 'USAGE:' >&2
-    echo '  bash download-actionlint.bash [[VERSION] DIR]' >&2
+    echo '  bash download-yactionlint.bash [[VERSION] DIR]' >&2
     echo >&2
-    echo 'This script downloads actionlint binary from the following release page. curl' >&2
+    echo 'This script downloads yactionlint binary from the following release page. curl' >&2
     echo 'command is required as dependency' >&2
-    echo 'https://github.com/mkusaka/actionlint/releases' >&2
+    echo 'https://github.com/mkusaka/yactionlint/releases' >&2
     echo >&2
     echo 'DIR:' >&2
     echo '  Directory to put the downloaded binary (e.g. /path/to/dir). When this value is' >&2
     echo '  omitted, the binary will be put in the current directory.' >&2
     echo >&2
     echo 'VERSION:' >&2
-    echo '   Version of actionlint to download. Version must be a specific version' >&2
-    echo '   "{major}.{minor}.{patch}" such as "0.0.1" or "latest". When "latest" is' >&2
+    echo '   Version of yactionlint to download. Version must be a specific version' >&2
+    echo '   "{major}.{minor}.{patch}" such as "0.0.2" or "latest". When "latest" is' >&2
     echo '   specified or this argument is omitted, the latest version will be selected.' >&2
     echo >&2
     echo 'EXAMPLE:' >&2
     echo '  - Download the latest binary to the current directory' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash' >&2
+    echo '      $ bash download-yactionlint.bash' >&2
     echo >&2
     echo '  - Download the latest binary to /usr/bin' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash latest /usr/bin' >&2
+    echo '      $ bash download-yactionlint.bash latest /usr/bin' >&2
     echo >&2
-    echo '  - Download version 0.0.1 to the current directory' >&2
+    echo '  - Download version 0.0.2 to the current directory' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash 0.0.1' >&2
+    echo '      $ bash download-yactionlint.bash 0.0.2' >&2
     echo >&2
-    echo '  - Download version 0.0.1 to /usr/bin' >&2
+    echo '  - Download version 0.0.2 to /usr/bin' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash 0.0.1 /usr/bin' >&2
+    echo '      $ bash download-yactionlint.bash 0.0.2 /usr/bin' >&2
 }
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
@@ -43,7 +43,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 # Default value is updated manually on release
-version="0.0.1"
+version="0.0.2"
 if [ -n "$1" ]; then
     if [[ "$1" != 'latest' && "$1" != 'LATEST' ]]; then
         if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -69,7 +69,7 @@ if [ -n "$2" ]; then
     fi
 fi
 
-echo "Start downloading actionlint v${version} to ${target_dir}"
+echo "Start downloading yactionlint v${version} to ${target_dir}"
 
 case "$OSTYPE" in
     linux-*)
@@ -109,21 +109,21 @@ esac
 
 echo "Detected OS=${os} ext=${ext} arch=${arch}"
 
-# https://github.com/mkusaka/actionlint/releases/download/v1.0.0/actionlint_1.0.0_linux_386.tar.gz
-file="actionlint_${version}_${os}_${arch}.${ext}"
-url="https://github.com/mkusaka/actionlint/releases/download/v${version}/${file}"
+# https://github.com/mkusaka/yactionlint/releases/download/v1.0.0/yactionlint_1.0.0_linux_386.tar.gz
+file="yactionlint_${version}_${os}_${arch}.${ext}"
+url="https://github.com/mkusaka/yactionlint/releases/download/v${version}/${file}"
 
 echo "Downloading ${url} with curl"
 
 if [[ "$os" == "windows" ]]; then
-    tempdir="$(mktemp -d actionlint.XXXXXXXXXXXXXXXX)"
+    tempdir="$(mktemp -d yactionlint.XXXXXXXXXXXXXXXX)"
     curl -L -o "$tempdir/tmp.zip" "${url}"
-    unzip "$tempdir/tmp.zip" actionlint.exe -d "$target_dir"
+    unzip "$tempdir/tmp.zip" yactionlint.exe -d "$target_dir"
     rm -r "$tempdir"
-    exe="$target_dir/actionlint.exe"
+    exe="$target_dir/yactionlint.exe"
 else
-    curl -L "${url}" | tar xvz -C "$target_dir" actionlint
-    exe="$target_dir/actionlint"
+    curl -L "${url}" | tar xvz -C "$target_dir" yactionlint
+    exe="$target_dir/yactionlint"
 fi
 
 echo "Downloaded and unarchived executable: ${exe}"

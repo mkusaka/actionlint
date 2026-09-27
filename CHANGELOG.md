@@ -1,3 +1,7 @@
+# Unreleased
+
+- Publish the fork's own WebAssembly playground from `main` on GitHub Pages, including workflow and action metadata modes. Replace the README link to upstream's different linter.
+
 <a id="v0.0.3"></a>
 # [v0.0.3](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.3) - 2026-09-28
 

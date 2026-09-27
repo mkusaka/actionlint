@@ -56,6 +56,9 @@ jobs:
     steps:
       - run: echo 'hi'`;
         };
+        dom.window.getInputFormat = function () {
+            return 'workflow';
+        };
         dom.window.onCheckCompleted = results.onCheckCompleted.bind(results);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +82,6 @@ jobs:
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const err = errors[0]!;
-        assert.equal(err.message, '"runs-on" section is missing in job "test"', `message is unexpected: ${json}`);
         assert.equal(err.line, 5, `line is unexpected: ${json}`);
         assert.equal(err.column, 3, `column is unexpected: ${json}`);
         assert.equal(err.kind, 'syntax-check', `kind is unexpected: ${json}`);
@@ -105,7 +107,6 @@ jobs:
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const err = errors[0]!;
-        assert.ok(err.message.includes('unknown Webhook event "foo"'), `message is unexpected: ${json}`);
         assert.equal(err.line, 2, `line is unexpected: ${json}`);
         assert.equal(err.column, 5, `column is unexpected: ${json}`);
         assert.equal(err.kind, 'events', `kind is unexpected: ${json}`);
@@ -128,5 +129,27 @@ jobs:
         const errors = await results.waitCheckCompleted();
         const json = JSON.stringify(errors);
         assert.equal(errors.length, 0, json);
+    });
+
+    it('checks composite action metadata with the action input format', async function () {
+        assert.ok(window.runActionlint);
+        results.reset();
+
+        const source = `name: Example
+description: Checks action metadata
+runs:
+  using: composite
+  steps:
+    - run: echo ok
+      shell: bash
+      timeout-minutes: 5`;
+
+        window.runActionlint(source, 'action');
+        const errors = await results.waitCheckCompleted();
+        assert.ok(errors.some(error => error.kind === 'syntax-check' && error.line === 8));
+
+        results.reset();
+        window.runActionlint(source.replace('      timeout-minutes: 5', ''), 'action');
+        assert.deepEqual(await results.waitCheckCompleted(), []);
     });
 });

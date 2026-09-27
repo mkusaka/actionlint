@@ -6,8 +6,9 @@ interface ActionlintError {
 }
 
 interface Window {
-    runActionlint?(src: string): void;
+    runActionlint?(src: string, format?: string): void;
     getYamlSource(): string;
+    getInputFormat(): string;
     showError(msg: string): void;
     onCheckCompleted(errs: ActionlintError[]): void;
     dismissLoading(): void;

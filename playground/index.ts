@@ -19,6 +19,10 @@
     const checkUrlInput = getElementById('check-url-input') as HTMLInputElement;
     const permalinkButton = getElementById('permalink-btn');
     const invalidInputMessage = getElementById('invalid-input');
+    const inputFormat = getElementById('input-format') as HTMLSelectElement;
+    if (new URLSearchParams(window.location.search).get('format') === 'action') {
+        inputFormat.value = 'action';
+    }
     const preferDark = window.matchMedia('(prefers-color-scheme: dark)');
 
     function colorTheme(isDark: boolean): 'material-darker' | 'default' {
@@ -127,9 +131,19 @@ jobs:
     const debounceInterval = isMobile.phone ? 1000 : 300;
     let debounceId: number | null = null;
     let contentChanged = false;
+    function checkSource(): void {
+        if (typeof window.runActionlint !== 'function') {
+            showError('Preparing Wasm file is not completed yet. Please wait for a while and try again.');
+            return;
+        }
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+        invalidInputMessage.style.display = 'none';
+        editor.clearGutter('error-marker');
+        window.runActionlint(editor.getValue(), inputFormat.value);
+    }
     editor.on('change', function (_, e) {
         contentChanged = true;
-
         if (typeof window.runActionlint !== 'function') {
             showError('Preparing Wasm file is not completed yet. Please wait for a while and try again.');
             return;
@@ -141,12 +155,7 @@ jobs:
 
         function startActionlint(): void {
             debounceId = null;
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-            invalidInputMessage.style.display = 'none';
-            editor.clearGutter('error-marker');
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            window.runActionlint!(editor.getValue());
+            checkSource();
         }
 
         if (e.origin === 'paste') {
@@ -157,6 +166,13 @@ jobs:
         debounceId = window.setTimeout(() => {
             startActionlint();
         }, debounceInterval);
+    });
+    inputFormat.addEventListener('change', () => {
+        if (debounceId !== null) {
+            window.clearTimeout(debounceId);
+            debounceId = null;
+        }
+        checkSource();
     });
 
     function getSource(): string {
@@ -267,7 +283,7 @@ jobs:
     }
 
     window.getYamlSource = getSource;
-    window.showError = showError;
+    window.getInputFormat = () => inputFormat.value;
     window.onCheckCompleted = onCheckCompleted;
     window.dismissLoading = dismissLoading;
 
@@ -311,7 +327,15 @@ jobs:
         const bin = new TextEncoder().encode(src);
         const compressed = pako.deflate(bin);
         const b64 = btoa(String.fromCharCode(...compressed));
-        window.location.hash = b64;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('s');
+        if (inputFormat.value === 'action') {
+            url.searchParams.set('format', 'action');
+        } else {
+            url.searchParams.delete('format');
+        }
+        url.hash = b64;
+        window.history.replaceState(null, '', url);
     });
 
     preferDark.addEventListener('change', event => {

@@ -280,13 +280,12 @@ jobs:
 
 ## Online playground
 
-Thanks to WebAssembly, the upstream actionlint playground is available externally in your browser. It never sends any data outside your browser.
+The [yactionlint playground](https://mkusaka.github.io/yactionlint/) runs this fork's WebAssembly build in your
+browser. Pasted YAML is checked locally; using **Check** to load a URL fetches that file from its host.
 
-https://rhysd.github.io/actionlint/
-
-Paste your workflow content to the code editor at left pane. It automatically shows the results at right pane. When editing
-the workflow content in the code editor, the results will be updated on the fly. Clicking an error message in the results
-table moves a cursor to position of the error in the code editor.
+Paste a workflow in the left editor and see diagnostics in the right pane. Select **Action metadata** to lint
+`action.yml` content. Editing updates results immediately, and clicking a diagnostic moves the editor cursor.
+The playground cannot read your repository or run shellcheck/pyflakes; use the CLI for those checks.
 
 <a id="docker"></a>
 ## [Upstream actionlint Docker image (external)][docker]

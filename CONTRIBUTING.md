@@ -177,31 +177,9 @@ Visit [`playground/README.md`](./playground/README.md).
 
 ## How to deploy playground
 
-Run [`deploy.bash`](./playground/deploy.bash) at root of repository. It does:
-
-1. Ensure to install dependencies and to build `main.wasm`
-2. Copy all assets to `./playground-dist` directory
-3. Optimize `main.wasm` with `wasm-opt` which is a part of [Binaryen](https://github.com/WebAssembly/binaryen) toolchain
-3. Switch branch to `gh-pages`
-4. Move all files in `./playground-dist` to root of repository and add to repository
-5. Make commit for deployment
-
-```sh
-# Prepare deployment
-bash ./playground/deploy.bash
-# Check it works fine by visiting localhost:1234
-npm run serve
-# If it looks good, deploy it
-git push
-```
-
-Note: `SKIP_BUILD_WASM` environment variable can skip building `main.wasm` binary. Please set it when the Wasm binary
-doesn't need to be updated. It is important to avoid bloating a repository size by including a big Wasm binary in a
-commit.
-
-```sh
-SKIP_BUILD_WASM=true bash ./playground/deploy.bash
-```
+The [Pages workflow](.github/workflows/playground.yaml) builds the TypeScript and WebAssembly frontend and publishes
+it from `main` automatically when playground or Go sources change. Use the workflow's **Run workflow** action for
+a manual redeployment. No `gh-pages` checkout, local `wasm-opt`, or committed generated binary is required.
 
 ## Maintain auto-generated sources
 

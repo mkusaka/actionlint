@@ -3,7 +3,7 @@ yactionlint
 [![CI Status][ci-badge]][ci]
 [![API Document][apidoc-badge]][apidoc]
 
-[yactionlint][repo] is a static checker for GitHub Actions workflow files. This repository is a fork of [rhysd/actionlint][upstream]. [Try the upstream playground online (external)!][playground]
+[yactionlint][repo] is a static checker for GitHub Actions workflow files. This repository is a fork of [rhysd/actionlint][upstream]. [Try the yactionlint playground online!][playground]
 
 Features:
 
@@ -99,7 +99,8 @@ as minimal as possible.
 yactionlint
 ```
 
-The [upstream playground][playground] runs rhysd/actionlint, not this fork; use the CLI to check yactionlint-only syntax.
+The [playground][playground] runs this fork's WebAssembly build in your browser. Select **Action metadata** to check
+`action.yml` files; repository-dependent checks and external shellcheck/pyflakes integrations require the CLI.
 
 See [the usage document][usage] for more details.
 
@@ -131,7 +132,7 @@ yactionlint is distributed under [the MIT license](./LICENSE.txt).
 [apidoc]: https://pkg.go.dev/github.com/mkusaka/yactionlint
 [repo]: https://github.com/mkusaka/yactionlint
 [upstream]: https://github.com/rhysd/actionlint
-[playground]: https://rhysd.github.io/actionlint/
+[playground]: https://mkusaka.github.io/yactionlint/
 [shellcheck]: https://github.com/koalaman/shellcheck
 [pyflakes]: https://github.com/PyCQA/pyflakes
 [syntax-doc]: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions

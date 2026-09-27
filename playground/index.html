@@ -3,10 +3,8 @@
   <head>
     <title>yactionlint playground</title>
     <meta charset="utf-8"/>
-    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:card" content="summary"/>
     <meta name="twitter:title" content="yactionlint, a static checker for GitHub Actions workflow files"/>
-    <meta name="twitter:image" content="https://github.com/rhysd/ss/blob/master/actionlint/ogp.jpg?raw=true"/>
-    <meta name="twitter:image:alt" content="Screenshot of the upstream actionlint playground"/>
     <link rel="stylesheet" href="lib/css/codemirror.css">
     <link rel="stylesheet" href="lib/css/material-darker.css">
     <link rel="stylesheet" href="lib/css/bulma.min.css">
@@ -25,13 +23,22 @@
         <h1 class="title">
           <a id="logo" rel="noopener" href="https://github.com/mkusaka/yactionlint"><i class="devicon-github-original"></i></a>
           yactionlint playground
-          <a rel="noopener" aria-label="Upstream release v1.7.12" href="https://github.com/rhysd/actionlint/releases/tag/v1.7.12">
-            <span class="tag is-dark" id="version">v1.7.12</span>
+          <a rel="noopener" aria-label="Source on main" href="https://github.com/mkusaka/yactionlint/commits/main">
+            <span class="tag is-dark" id="version">main</span>
           </a>
         </h1>
         <h2 class="subtitle">Static checker for GitHub Actions workflow files</h2>
       </header>
       <div id="controls" class="navbar-end">
+        <div class="control">
+          <label for="input-format" class="is-sr-only">Input format</label>
+          <div class="select">
+            <select id="input-format" aria-label="Input format">
+              <option value="workflow">Workflow</option>
+              <option value="action">Action metadata</option>
+            </select>
+          </div>
+        </div>
         <div class="control">
           <a id="permalink-btn" class="button">Permalink</a>
         </div>

@@ -74,8 +74,9 @@ These checks are not necessarily available in the external upstream playground:
 - Action metadata can be checked directly, including composite action steps, output expressions,
   branding, and the unsupported `timeout-minutes` key in composite steps.
 
-Note that yactionlint focuses on catching mistakes in workflow files. If you want some general code style checks, please consider
-using a general YAML checker like [yamllint][]. All `Playground` links below open the external upstream actionlint playground.
+Note that yactionlint focuses on catching mistakes in workflows and action metadata. For general YAML style checks,
+consider [yamllint][]. The example `Playground` links below still open the external upstream actionlint site;
+use the [yactionlint playground](https://mkusaka.github.io/yactionlint/) for this fork's checks.
 
 <a id="check-unexpected-keys"></a>
 ## Unexpected keys

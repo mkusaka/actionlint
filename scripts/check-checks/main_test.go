@@ -87,6 +87,7 @@ func TestUpdateAllowsOverviewSectionBeforeExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	example = []byte(strings.ReplaceAll(string(example), "\r\n", "\n"))
 	source := append([]byte("Intro\n\n<a id=\"overview\"></a>\n## Overview\n<!-- No example -->\n\nText without an example.\n\n"), example...)
 	out, err := Update(source)
 	if err != nil {

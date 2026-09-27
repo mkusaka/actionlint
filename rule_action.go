@@ -287,6 +287,8 @@ var BrandingIcons = map[string]struct{}{
 	"zoom-out":           {},
 }
 
+var reCommitHash = regexp.MustCompile(`^[0-9a-fA-F]{40}$`)
+
 // https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#runsimage
 func isImageOnDockerRegistry(image string) bool {
 	return strings.HasPrefix(image, "docker://") ||
@@ -370,6 +372,10 @@ func (rule *RuleAction) checkRepoAction(spec string, exec *ExecAction) {
 
 	if owner == "" || repo == "" || ref == "" {
 		rule.invalidActionFormat(exec.Uses.Pos, spec, "owner and repo and ref should not be empty")
+	}
+
+	if owner != "" && repo != "" && ref != "" && rule.config != nil && rule.config.RequireCommitHash && !reCommitHash.MatchString(ref) {
+		rule.Errorf(exec.Uses.Pos, "action %q must be pinned to a full-length commit SHA", spec)
 	}
 
 	meta, ok := PopularActions[spec]
@@ -588,10 +594,40 @@ func (rule *RuleAction) checkLocalAction(spec string, action *ExecAction) {
 		rule.Debug("Checking metadata of %s action %q at %q", meta.Runs, meta.Name, spec)
 		rule.checkLocalActionMetadata(meta, action)
 	}
+	rule.checkLocalCompositeActionUses(meta, action)
 
 	rule.checkAction(meta, action, func(m *ActionMetadata) string {
 		return fmt.Sprintf("%q defined at %q", m.Name, spec)
 	})
+}
+
+func (rule *RuleAction) checkLocalCompositeActionUses(meta *ActionMetadata, action *ExecAction) {
+	if rule.config == nil || !rule.config.RequireCommitHash || meta.Runs.Using != "composite" {
+		return
+	}
+
+	for _, step := range meta.Runs.Steps {
+		values, ok := step.(map[string]any)
+		if !ok {
+			continue
+		}
+		spec, ok := values["uses"].(string)
+		if !ok || strings.Contains(spec, "${{") || strings.HasPrefix(spec, "docker://") || !strings.Contains(spec, "/") {
+			continue
+		}
+		if _, ok := canonLocalUsesSpec(spec); ok {
+			continue
+		}
+		_, ref, ok := strings.Cut(spec, "@")
+		if !ok || !reCommitHash.MatchString(ref) {
+			rule.Errorf(
+				action.Uses.Pos,
+				"action %q in local composite action %q must be pinned to a full-length commit SHA",
+				spec,
+				meta.Path(),
+			)
+		}
+	}
 }
 
 var reNewlineWithIndent = regexp.MustCompile(`\s*\r?\n\s*`)

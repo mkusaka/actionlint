@@ -87,6 +87,12 @@ func (rule *RulePyflakes) VisitWorkflowPost(n *Workflow) error {
 	return rule.cmd.wait()                                    // Wait until all processes running for this rule
 }
 
+// VisitActionPost is callback after visiting an action metadata file.
+func (rule *RulePyflakes) VisitActionPost(n *Action) error {
+	rule.workflowShellIsPython = shellIsPythonKindUnspecified
+	return rule.cmd.wait()
+}
+
 // VisitStep is callback when visiting Step node.
 func (rule *RulePyflakes) VisitStep(n *Step) error {
 	run, ok := n.Exec.(*ExecRun)

@@ -1,6 +1,93 @@
 package actionlint
 
-import "slices"
+import (
+	"slices"
+	"strings"
+)
+
+const (
+	permissionNone = iota
+	permissionRead
+	permissionWrite
+)
+
+func permissionLevel(value string) int {
+	switch strings.ToLower(value) {
+	case "read":
+		return permissionRead
+	case "write":
+		return permissionWrite
+	default:
+		return permissionNone
+	}
+}
+
+func permissionLevelName(level int) string {
+	switch level {
+	case permissionRead:
+		return "read"
+	case permissionWrite:
+		return "write"
+	default:
+		return "none"
+	}
+}
+
+func clampPermissionLevel(scope string, level int) int {
+	allowed, ok := allPermissionScopes[scope]
+	if !ok {
+		return permissionNone
+	}
+	if level == permissionWrite && !slices.Contains(allowed, "write") {
+		level = permissionRead
+	}
+	if level == permissionRead && !slices.Contains(allowed, "read") {
+		return permissionNone
+	}
+	return level
+}
+
+// explicitPermissionLevel returns known permission for a scope. The second return value is false
+// when an expression determines the permission at runtime.
+func explicitPermissionLevel(p *ReusableWorkflowPermissions, scope string) (int, bool) {
+	if p.Dynamic {
+		return permissionNone, false
+	}
+	if p.All != "" {
+		if ContainsExpression(p.All) {
+			return permissionNone, false
+		}
+		switch p.All {
+		case "read-all":
+			return clampPermissionLevel(scope, permissionRead), true
+		case "write-all":
+			return clampPermissionLevel(scope, permissionWrite), true
+		default:
+			return permissionNone, true
+		}
+	}
+	value, ok := p.Scopes[scope]
+	if !ok {
+		return permissionNone, true
+	}
+	if ContainsExpression(value) {
+		return permissionNone, false
+	}
+	return clampPermissionLevel(scope, permissionLevel(value)), true
+}
+
+func defaultPermissionLevel(mode, scope string) int {
+	if mode == AssumeDefaultPermissionsPermissive {
+		if scope == "id-token" {
+			return permissionNone
+		}
+		return clampPermissionLevel(scope, permissionWrite)
+	}
+	if scope == "contents" || scope == "packages" {
+		return permissionRead
+	}
+	return permissionNone
+}
 
 var allPermissionScopes = map[string][]string{
 	"actions":              {"read", "write", "none"},

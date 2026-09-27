@@ -2,6 +2,7 @@ package actionlint
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -124,6 +125,22 @@ func TestRuleWorkflowCallWriteEventNodeToMetadataCache(t *testing.T) {
 				Pos: &Pos{},
 			},
 		},
+		Permissions: &Permissions{
+			Scopes: map[string]*PermissionScope{
+				"contents": {Name: s("contents"), Value: s("read")},
+			},
+		},
+		Concurrency: &Concurrency{Group: s("workflow-group")},
+		Jobs: map[string]*Job{
+			"callee": {
+				ID: s("callee"),
+				Permissions: &Permissions{
+					Scopes: map[string]*PermissionScope{
+						"pull-requests": {Name: s("pull-requests"), Value: s("write")},
+					},
+				},
+			},
+		},
 	}
 
 	cwd := filepath.Join("path", "to", "project")
@@ -154,6 +171,10 @@ func TestRuleWorkflowCallWriteEventNodeToMetadataCache(t *testing.T) {
 		Secrets: ReusableWorkflowMetadataSecrets{
 			"secret1": {"secret1", false},
 		},
+		JobPermissions: map[string]*ReusableWorkflowPermissions{
+			"callee": {Scopes: map[string]string{"pull-requests": "write"}},
+		},
+		ConcurrencyGroup: "workflow-group",
 	}
 
 	if diff := cmp.Diff(want, m); diff != "" {
@@ -401,6 +422,253 @@ func TestRuleWorkflowCallCheckReusableWorkflowCall(t *testing.T) {
 				if !strings.Contains(have, want) {
 					t.Errorf("%d-th error is unexpected. %q should be contained in error message %q", i, want, have)
 				}
+			}
+		})
+	}
+}
+
+func TestRuleWorkflowCallChecksReusableWorkflowConcurrency(t *testing.T) {
+	const issueGroup = "${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}"
+	tests := []struct {
+		name           string
+		callerGroup    string
+		calleeGroup    string
+		unrelatedGroup string
+		wantError      bool
+	}{
+		{
+			name:        "reports issue 538 group",
+			callerGroup: issueGroup,
+			calleeGroup: issueGroup,
+			wantError:   true,
+		},
+		{
+			name:        "ignores identical caller input expressions",
+			callerGroup: "${{ inputs.scope }}",
+			calleeGroup: "${{ inputs.scope }}",
+		},
+		{
+			name:        "ignores github workflow ref",
+			callerGroup: "${{ github.workflow_ref }}",
+			calleeGroup: "${{ github.workflow_ref }}",
+		},
+		{
+			name:        "ignores github workflow sha",
+			callerGroup: "${{ github.workflow_sha }}",
+			calleeGroup: "${{ github.workflow_sha }}",
+		},
+		{
+			name:        "ignores github job workflow reference",
+			callerGroup: "${{ github.job_workflow_ref }}",
+			calleeGroup: "${{ github.job_workflow_ref }}",
+		},
+		{
+			name:        "reports equal static group",
+			callerGroup: "deploy",
+			calleeGroup: "deploy",
+			wantError:   true,
+		},
+		{
+			name:        "ignores distinct expressions",
+			callerGroup: issueGroup,
+			calleeGroup: "${{ github.workflow }}-${{ github.ref }}",
+		},
+		{
+			name:        "ignores distinct static groups",
+			callerGroup: "caller",
+			calleeGroup: "callee",
+		},
+		{
+			name:           "ignores unrelated job group",
+			callerGroup:    "caller",
+			calleeGroup:    "callee",
+			unrelatedGroup: "callee",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			unrelatedGroup := tc.unrelatedGroup
+			if unrelatedGroup == "" {
+				unrelatedGroup = "unrelated"
+			}
+
+			calleePath := filepath.Join(root, ".github", "workflows", "callee.yaml")
+			if err := os.MkdirAll(filepath.Dir(calleePath), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			callee := fmt.Sprintf(`on: workflow_call
+concurrency:
+  group: %s
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo callee
+`, tc.calleeGroup)
+			if err := os.WriteFile(calleePath, []byte(callee), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			caller := fmt.Sprintf(`on: pull_request
+concurrency:
+  group: %s
+jobs:
+  call:
+    uses: ./.github/workflows/callee.yaml
+  unrelated:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: %s
+    steps:
+      - run: echo unrelated
+`, tc.callerGroup, unrelatedGroup)
+			workflow, errs := Parse([]byte(caller))
+			if len(errs) != 0 {
+				t.Fatal(errs)
+			}
+			rule := NewRuleWorkflowCall(
+				filepath.Join(root, ".github", "workflows", "caller.yaml"),
+				NewLocalReusableWorkflowCache(&Project{root, nil}, root, nil),
+			)
+			visitor := NewVisitor()
+			visitor.AddPass(rule)
+			if err := visitor.Visit(workflow); err != nil {
+				t.Fatal(err)
+			}
+
+			errs = rule.Errs()
+			if tc.wantError {
+				if len(errs) != 1 || !strings.Contains(errs[0].Message, "may cause a deadlock") {
+					t.Fatalf("wanted one deadlock error, got %v", errs)
+				}
+			} else if len(errs) != 0 {
+				t.Fatalf("unexpected errors: %v", errs)
+			}
+		})
+	}
+}
+
+func TestRuleWorkflowCallChecksCalleePermissions(t *testing.T) {
+	permissions := func(scopes map[string]string) *ReusableWorkflowPermissions {
+		return &ReusableWorkflowPermissions{Scopes: scopes}
+	}
+	astPermissions := func(scopes map[string]string) *Permissions {
+		if scopes == nil {
+			return nil
+		}
+		p := &Permissions{Scopes: make(map[string]*PermissionScope, len(scopes))}
+		for name, value := range scopes {
+			p.Scopes[name] = &PermissionScope{
+				Name:  &String{Value: name, Pos: &Pos{}},
+				Value: &String{Value: value, Pos: &Pos{}},
+			}
+		}
+		return p
+	}
+
+	tests := []struct {
+		name           string
+		callerWorkflow map[string]string
+		callerJob      map[string]string
+		callee         *ReusableWorkflowPermissions
+		defaultMode    string
+		wantError      string
+	}{
+		{
+			name:      "reports unavailable permission",
+			callerJob: map[string]string{"pull-requests": "read"},
+			callee:    permissions(map[string]string{"pull-requests": "write"}),
+			wantError: `requires "pull-requests: write" but the calling job grants "pull-requests: read"`,
+		},
+		{
+			name:      "accepts granted permission",
+			callerJob: map[string]string{"pull-requests": "write"},
+			callee:    permissions(map[string]string{"pull-requests": "write"}),
+		},
+		{
+			name:      "callee inherits caller permission",
+			callerJob: map[string]string{"pull-requests": "none"},
+			callee:    nil,
+		},
+		{
+			name:           "calling job overrides workflow permission",
+			callerWorkflow: map[string]string{"contents": "write"},
+			callerJob:      map[string]string{"contents": "read"},
+			callee:         permissions(map[string]string{"contents": "write"}),
+			wantError:      `requires "contents: write" but the calling job grants "contents: read"`,
+		},
+		{
+			name:      "dynamic caller permission is not guessed",
+			callerJob: map[string]string{"contents": "${{ inputs.contents_permission }}"},
+			callee:    permissions(map[string]string{"contents": "write"}),
+		},
+		{
+			name:      "dynamic callee permission is not guessed",
+			callerJob: map[string]string{"contents": "read"},
+			callee:    permissions(map[string]string{"contents": "${{ inputs.contents_permission }}"}),
+		},
+		{
+			name:      "dynamic callee permission set is not guessed",
+			callerJob: map[string]string{"contents": "none"},
+			callee:    &ReusableWorkflowPermissions{All: "${{ inputs.permissions }}", Dynamic: true},
+		},
+		{
+			name:   "restricted default grants contents read",
+			callee: permissions(map[string]string{"contents": "read"}),
+		},
+		{
+			name:      "restricted default denies pull requests write",
+			callee:    permissions(map[string]string{"pull-requests": "write"}),
+			wantError: `requires "pull-requests: write" but the calling job grants "pull-requests: none"`,
+		},
+		{
+			name:        "permissive default grants pull requests write",
+			callee:      permissions(map[string]string{"pull-requests": "write"}),
+			defaultMode: AssumeDefaultPermissionsPermissive,
+		},
+		{
+			name:        "permissive default still denies id token",
+			callee:      permissions(map[string]string{"id-token": "write"}),
+			defaultMode: AssumeDefaultPermissionsPermissive,
+			wantError:   `requires "id-token: write" but the calling job grants "id-token: none"`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cache := NewLocalReusableWorkflowCache(&Project{"testdata", nil}, "testdata", nil)
+			cache.writeCache("./callee.yaml", &ReusableWorkflowMetadata{
+				JobPermissions: map[string]*ReusableWorkflowPermissions{"callee": tc.callee},
+			})
+			rule := NewRuleWorkflowCall("caller.yaml", cache)
+			if tc.defaultMode != "" {
+				mode := tc.defaultMode
+				rule.SetConfig(&Config{AssumeDefaultPermissions: &mode})
+			}
+			if err := rule.VisitWorkflowPre(&Workflow{Permissions: astPermissions(tc.callerWorkflow)}); err != nil {
+				t.Fatal(err)
+			}
+			if err := rule.VisitJobPre(&Job{
+				Permissions: astPermissions(tc.callerJob),
+				WorkflowCall: &WorkflowCall{
+					Uses:    &String{Value: "./callee.yaml", Pos: &Pos{}},
+					Inputs:  map[string]*WorkflowCallInput{},
+					Secrets: map[string]*WorkflowCallSecret{},
+				},
+			}); err != nil {
+				t.Fatal(err)
+			}
+			errs := rule.Errs()
+			if tc.wantError == "" {
+				if len(errs) != 0 {
+					t.Fatalf("unexpected errors: %v", errs)
+				}
+				return
+			}
+			if len(errs) != 1 || !strings.Contains(errs[0].Error(), tc.wantError) {
+				t.Fatalf("wanted one error containing %q, got %v", tc.wantError, errs)
 			}
 		})
 	}

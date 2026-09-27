@@ -51,6 +51,17 @@ type PathConfig struct {
 	Ignore IgnorePatterns `yaml:"ignore"`
 }
 
+// TimeoutMinutesConfig specifies an optional job timeout policy.
+type TimeoutMinutesConfig struct {
+	Required   bool    `yaml:"required"`
+	MaxMinutes float64 `yaml:"max"`
+}
+
+const (
+	AssumeDefaultPermissionsRestricted = "restricted"
+	AssumeDefaultPermissionsPermissive = "permissive"
+)
+
 // Config is configuration of yactionlint. This struct instance is parsed from "yactionlint.yaml"
 // file usually put in ".github" directory.
 type Config struct {
@@ -64,9 +75,28 @@ type Config struct {
 	// listed here as undefined config variables.
 	// https://docs.github.com/en/actions/learn-github-actions/variables
 	ConfigVariables []string `yaml:"config-variables"`
+	// ConfigSecrets is an optional allow-list of repository and organization secrets.
+	// Nil disables this check; an empty sequence permits no non-built-in secrets.
+	ConfigSecrets []string `yaml:"config-secrets"`
+	// RequiredActions specifies actions which must be used in each workflow.
+	RequiredActions []RequiredActionRule `yaml:"required-actions"`
+	// RequireCommitHash requires repository actions to use full-length commit SHA references.
+	RequireCommitHash bool `yaml:"require-commit-hash"`
+	// RequireExactActionVersion requires immutable commit hashes or exact semantic version tags.
+	RequireExactActionVersion bool `yaml:"require-exact-action-version"`
+	// RequireExplicitIfExpressions requires ${{ ... }} around optional job and step if expressions.
+	RequireExplicitIfExpressions bool `yaml:"require-explicit-if-expressions"`
+	// RequirePermissions requires a workflow-level permissions declaration.
+	RequirePermissions bool `yaml:"require-permissions"`
+	// RequireExplicitPermissions enforces per-job permissions and least-privilege workflow defaults.
+	RequireExplicitPermissions bool `yaml:"require-explicit-permissions"`
 	// Paths is a "paths" mapping in the configuration file. The keys are glob patterns to match file paths.
 	// And the values are corresponding configurations applied to the file paths.
 	Paths map[string]PathConfig `yaml:"paths"`
+	// TimeoutMinutes configures required and maximum job timeouts.
+	TimeoutMinutes TimeoutMinutesConfig `yaml:"timeout-minutes"`
+	// AssumeDefaultPermissions models the caller token when no permissions are declared.
+	AssumeDefaultPermissions *string `yaml:"assume-default-permissions"`
 }
 
 // PathConfigs returns a list of all PathConfig values matching to the given file path. The path must
@@ -97,6 +127,16 @@ func ParseConfig(b []byte) (*Config, error) {
 	for pat := range c.Paths {
 		if !doublestar.ValidatePattern(pat) {
 			return nil, fmt.Errorf("invalid glob pattern %q in \"paths\"", pat)
+		}
+	}
+	if c.TimeoutMinutes.MaxMinutes < 0 {
+		return nil, fmt.Errorf("\"timeout-minutes.max\" must not be negative")
+	}
+	if c.AssumeDefaultPermissions != nil {
+		switch *c.AssumeDefaultPermissions {
+		case AssumeDefaultPermissionsRestricted, AssumeDefaultPermissionsPermissive:
+		default:
+			return nil, fmt.Errorf("invalid value %q for \"assume-default-permissions\": expected %q or %q", *c.AssumeDefaultPermissions, AssumeDefaultPermissionsRestricted, AssumeDefaultPermissionsPermissive)
 		}
 	}
 	return &c, nil
@@ -143,6 +183,10 @@ func writeDefaultConfigFile(path string) error {
 # Empty array means no configuration variable is allowed.
 config-variables: null
 
+# Secrets defined in the repository or organization. null disables checking.
+# An empty array disallows all non-built-in secrets.
+config-secrets: null
+
 # Configuration for file paths. The keys are glob patterns to match to file
 # paths relative to the repository root. The values are the configurations for
 # the file paths. Note that the path separator is always '/'.
@@ -153,6 +197,14 @@ config-variables: null
 paths:
 #  .github/workflows/**/*.yml:
 #    ignore: []
+
+# Optional policy for job timeout-minutes. max: 0 disables the maximum check.
+#timeout-minutes:
+#  required: false
+#  max: 60
+
+# Caller token assumption when no permissions are declared: restricted or permissive.
+#assume-default-permissions: restricted
 `)
 	if err := os.WriteFile(path, b, 0644); err != nil {
 		return fmt.Errorf("could not write default configuration file at %q: %w", path, err)

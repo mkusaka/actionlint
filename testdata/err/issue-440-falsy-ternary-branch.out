@@ -1,0 +1,4 @@
+test.yaml:9:44: falsy literal as the true branch of "&&" makes this ternary-like expression always select the "||" branch [expression]
+test.yaml:10:44: falsy literal as the true branch of "&&" makes this ternary-like expression always select the "||" branch [expression]
+test.yaml:11:43: falsy literal as the true branch of "&&" makes this ternary-like expression always select the "||" branch [expression]
+test.yaml:12:43: falsy literal as the true branch of "&&" makes this ternary-like expression always select the "||" branch [expression]

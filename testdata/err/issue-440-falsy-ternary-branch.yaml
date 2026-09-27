@@ -1,0 +1,12 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
+        env:
+          EMPTY: ${{ env.BOOL == 'true' && '' || 'staging-' }}
+          FALSE: ${{ env.BOOL == 'true' && false || 'staging-' }}
+          ZERO: ${{ env.BOOL == 'true' && 0 || 'staging-' }}
+          NULL: ${{ env.BOOL == 'true' && null || 'staging-' }}

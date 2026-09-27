@@ -1,5 +1,5 @@
-yactionlint(1) -- static checker for GitHub Actions workflow files
-==========================================================
+yactionlint(1) -- static checker for GitHub Actions workflows and action metadata
+===============================================================================
 
 ## SYNOPSIS
 
@@ -10,11 +10,11 @@ yactionlint(1) -- static checker for GitHub Actions workflow files
 
 ## DESCRIPTION
 
-**yactionlint** is a linter for GitHub Actions workflow files.
+**yactionlint** is a linter for GitHub Actions workflows and action metadata.
 
 Features:
 
-- **Syntax check for workflow files** to check unexpected or missing keys following workflow syntax
+- **Syntax check for workflow files and action metadata** to check unexpected or missing keys
 - **Strong type check for `${{ }}` expressions** to catch several semantic errors like access to
   not existing property, type mismatches, ...
 - **Actions usage check** to check that inputs at `with:` and outputs in `steps.{id}.outputs` are
@@ -36,10 +36,12 @@ To check specific workflow files, pass the file paths as arguments:
 
     $ yactionlint file1.yaml file2.yaml
 
-To check a content which is not saved in file yet (e.g. output from some command), pass **-**
-argument. It reads stdin and checks it as workflow file:
+To check YAML from stdin, pass **-**. Use **-stdin-filename** or **-input-format=action** for
+action metadata:
 
     $ yactionlint -
+    $ yactionlint .github/actions/my-action/action.yml
+    $ cat action.yml | yactionlint -input-format=action -
 
 To serialize errors into JSON, use **-format** option. It allows to format error messages flexibly
 with Go template syntax.
@@ -66,6 +68,12 @@ with Go template syntax.
     Regular expression matching to error messages you want to ignore. This flag is repeatable. For
     example, `-ignore A -ignore B` ignores errors whose message includes "A" OR "B".
 
+    To ignore one diagnostic on the next YAML node, use a `# yactionlint ignore=<regex>`
+    comment directly above the node. The regular expression matches the error message.
+
+  * `-input-format` <FORMAT>:
+    Treat input as `workflow`, `action`, or `auto-detect` (default). Action metadata files
+    named `action.yml` or `action.yaml` are detected outside `.github/workflows`.
   * `-init-config`:
     Generate default config file at `.github/yactionlint.yaml` in current project
 

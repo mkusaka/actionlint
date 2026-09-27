@@ -46,7 +46,7 @@ func (inputs *ActionMetadataInputs) UnmarshalYAML(n *yaml.Node) error {
 	var err error
 
 	md := make(ActionMetadataInputs, len(n.Content)/2)
-	for i := 0; i < len(n.Content); i += 2 {
+	for i := 0; i+1 < len(n.Content); i += 2 {
 		k, v := n.Content[i].Value, n.Content[i+1]
 
 		var m actionInputMetadata
@@ -101,7 +101,7 @@ func (inputs *ActionMetadataOutputs) UnmarshalYAML(n *yaml.Node) error {
 	}
 
 	md := make(ActionMetadataOutputs, len(n.Content)/2)
-	for i := 0; i < len(n.Content); i += 2 {
+	for i := 0; i+1 < len(n.Content); i += 2 {
 		k := n.Content[i].Value
 		id := strings.ToLower(k)
 		if _, ok := md[id]; ok {

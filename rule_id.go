@@ -41,6 +41,18 @@ func (rule *RuleID) VisitJobPost(n *Job) error {
 	return nil
 }
 
+// VisitActionPre is callback before visiting an action metadata file.
+func (rule *RuleID) VisitActionPre(n *Action) error {
+	rule.seen = map[string]*Pos{}
+	return nil
+}
+
+// VisitActionPost is callback after visiting an action metadata file.
+func (rule *RuleID) VisitActionPost(n *Action) error {
+	rule.seen = nil
+	return nil
+}
+
 // VisitStep is callback when visiting Step node.
 func (rule *RuleID) VisitStep(n *Step) error {
 	if n.ID == nil {

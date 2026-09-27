@@ -379,6 +379,7 @@ type ExprSemanticsChecker struct {
 	availableContexts     []string
 	availableSpecialFuncs []string
 	configVars            []string
+	configSecrets         []string
 }
 
 // NewExprSemanticsChecker creates new ExprSemanticsChecker instance. When checkUntrustedInput is
@@ -627,6 +628,9 @@ func (sema *ExprSemanticsChecker) checkObjectDeref(n *ObjectDerefNode) ExprType 
 			if v, ok := n.Receiver.(*VariableNode); ok && v.Name == "vars" {
 				sema.checkConfigVariables(n)
 			}
+			if v, ok := n.Receiver.(*VariableNode); ok && v.Name == "secrets" {
+				sema.checkConfigSecrets(n)
+			}
 			return ty.Mapped
 		}
 		if ty.IsStrict() {
@@ -716,6 +720,22 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 		n.Property,
 		sortedQuotes(sema.configVars),
 	)
+}
+
+func (sema *ExprSemanticsChecker) checkConfigSecrets(n *ObjectDerefNode) {
+	if sema.configSecrets == nil || strings.EqualFold(n.Property, "github_token") {
+		return
+	}
+	for _, s := range sema.configSecrets {
+		if strings.EqualFold(s, n.Property) {
+			return
+		}
+	}
+	if len(sema.configSecrets) == 0 {
+		sema.errorf(n, "no secret is allowed since the secrets list is empty in yactionlint.yaml. add %q to the list if it is available", n.Property)
+		return
+	}
+	sema.errorf(n, "undefined secret %q. defined secrets in yactionlint.yaml are %s", n.Property, sortedQuotes(sema.configSecrets))
 }
 
 func (sema *ExprSemanticsChecker) checkArrayDeref(n *ArrayDerefNode) ExprType {
@@ -1049,6 +1069,31 @@ func (sema *ExprSemanticsChecker) checkWithNarrowing(n ExprNode, isTruthy bool) 
 	}
 }
 
+func isFalsyLiteral(n ExprNode) bool {
+	switch n := n.(type) {
+	case *NullNode:
+		return true
+	case *BoolNode:
+		return !n.Value
+	case *IntNode:
+		return n.Value == 0
+	case *FloatNode:
+		return n.Value == 0
+	case *StringNode:
+		return n.Value == ""
+	default:
+		return false
+	}
+}
+
+func (sema *ExprSemanticsChecker) checkTernaryLikeFalsyBranch(n *LogicalOpNode) {
+	and, ok := n.Left.(*LogicalOpNode)
+	if !ok || and.Kind != LogicalOpNodeKindAnd || !isFalsyLiteral(and.Right) {
+		return
+	}
+	sema.errorf(and.Right, "falsy literal as the true branch of \"&&\" makes this ternary-like expression always select the \"||\" branch")
+}
+
 func (sema *ExprSemanticsChecker) checkLogicalOp(n *LogicalOpNode) ExprType {
 	switch n.Kind {
 	case LogicalOpNodeKindAnd:
@@ -1058,6 +1103,7 @@ func (sema *ExprSemanticsChecker) checkLogicalOp(n *LogicalOpNode) ExprType {
 	case LogicalOpNodeKindOr:
 		// When `l` is true in `l || r`, its type is `typeof(l)`. Otherwise `typeof(r).
 		// Narrow the type of LHS expression by assuming its value is truthy.
+		sema.checkTernaryLikeFalsyBranch(n)
 		return sema.checkWithNarrowing(n.Left, true).Merge(sema.check(n.Right))
 	default:
 		sema.check(n.Left)

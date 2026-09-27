@@ -130,6 +130,7 @@ func (cmd *Command) Main(args []string) int {
 	var initConfig bool
 	var noColor bool
 	var color bool
+	var inputFormat string
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
@@ -146,6 +147,7 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&opts.Debug, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&ver, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&opts.StdinFileName, "stdin-filename", "<stdin>", "File name when reading input from stdin")
+	flags.StringVar(&inputFormat, "input-format", "auto-detect", "Input syntax: workflow, action, or auto-detect")
 	flags.Usage = func() {
 		printUsageHeader(cmd.Stderr)
 		flags.PrintDefaults()
@@ -155,6 +157,18 @@ func (cmd *Command) Main(args []string) int {
 			// When -h or -help
 			return ExitStatusSuccessNoProblem
 		}
+		return ExitStatusInvalidCommandOption
+	}
+
+	switch inputFormat {
+	case "workflow":
+		opts.InputFormat = FileWorkflow
+	case "action":
+		opts.InputFormat = FileAction
+	case "auto-detect":
+		opts.InputFormat = FileAutoDetect
+	default:
+		fmt.Fprintf(cmd.Stderr, "invalid input format %q. expected workflow, action, or auto-detect\n", inputFormat)
 		return ExitStatusInvalidCommandOption
 	}
 

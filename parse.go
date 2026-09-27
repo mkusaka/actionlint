@@ -1,9 +1,11 @@
 package actionlint
 
 import (
+	"bytes"
 	"fmt"
 	"iter"
 	"math"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -67,7 +69,9 @@ func (l *delayedSprintf) String() string {
 }
 
 type parser struct {
-	errors []*Error
+	errors  []*Error
+	ignores map[int][]*regexp.Regexp
+	source  []byte
 }
 
 func (p *parser) error(n *yaml.Node, m string) {
@@ -454,14 +458,16 @@ func (p *parser) parseWorkflowDispatchEvent(pos *Pos, n *yaml.Node) *WorkflowDis
 	ret := &WorkflowDispatchEvent{Pos: pos}
 
 	for e := range p.parseSectionMapping("workflow_dispatch", n, true, true) {
-		if e.id != "inputs" {
-			p.unexpectedKey(e.key, "workflow_dispatch", []string{"inputs"})
-			continue
-		}
-
-		ret.Inputs = map[string]*DispatchInput{}
-		for e := range p.parseSectionMapping("inputs", e.val, true, false) {
-			ret.Inputs[e.id] = p.parseWorkflowDispatchEventInput(e.key, e.val)
+		switch e.id {
+		case "if":
+			ret.If = p.parseString(e.val, false)
+		case "inputs":
+			ret.Inputs = map[string]*DispatchInput{}
+			for e := range p.parseSectionMapping("inputs", e.val, true, false) {
+				ret.Inputs[e.id] = p.parseWorkflowDispatchEventInput(e.key, e.val)
+			}
+		default:
+			p.unexpectedKey(e.key, "workflow_dispatch", []string{"if", "inputs"})
 		}
 	}
 
@@ -474,10 +480,13 @@ func (p *parser) parseRepositoryDispatchEvent(pos *Pos, n *yaml.Node) *Repositor
 
 	// Note: Omitting 'types' is ok. In the case, all types trigger the workflow
 	for e := range p.parseSectionMapping("repository_dispatch", n, true, true) {
-		if e.id == "types" {
+		switch e.id {
+		case "if":
+			ret.If = p.parseString(e.val, false)
+		case "types":
 			ret.Types = p.parseStringOrStringSequence("types", e.val, false, false)
-		} else {
-			p.unexpectedKey(e.key, "repository_dispatch", []string{"types"})
+		default:
+			p.unexpectedKey(e.key, "repository_dispatch", []string{"if", "types"})
 		}
 	}
 
@@ -507,6 +516,8 @@ func (p *parser) parseWebhookEvent(name *String, n *yaml.Node) *WebhookEvent {
 		switch e.id {
 		case "types":
 			ret.Types = p.parseStringOrStringSequence(e.key.Value, e.val, false, false)
+		case "if":
+			ret.If = p.parseString(e.val, false)
 		case "branches":
 			ret.Branches = p.parseWebhookEventFilter(e.key, e.val)
 		case "branches-ignore":
@@ -524,6 +535,7 @@ func (p *parser) parseWebhookEvent(name *String, n *yaml.Node) *WebhookEvent {
 		default:
 			p.unexpectedKey(e.key, name.Value, []string{
 				"types",
+				"if",
 				"branches",
 				"branches-ignore",
 				"tags",
@@ -1179,6 +1191,44 @@ func (p *parser) parseStepExecAction(entries []workflowMappingEntry, isDocker bo
 	return ret
 }
 
+// plainRunSpansMultipleLines examines physical source lines only for plain run
+// scalars starting below their key. YAML folds such lines into one command.
+func (p *parser) plainRunSpansMultipleLines(value *yaml.Node) bool {
+	line, offset := 1, 0
+	for line < value.Line {
+		next := bytes.IndexByte(p.source[offset:], '\n')
+		if next < 0 {
+			return false
+		}
+		offset += next + 1
+		line++
+	}
+	count := 0
+	for offset < len(p.source) {
+		next := bytes.IndexByte(p.source[offset:], '\n')
+		end := len(p.source)
+		if next >= 0 {
+			end = offset + next
+		}
+		text := p.source[offset:end]
+		indent := 0
+		for indent < len(text) && text[indent] == ' ' {
+			indent++
+		}
+		if indent < len(text) && text[indent] != '#' {
+			if indent+1 < value.Column {
+				break
+			}
+			count++
+			if count > 1 {
+				return true
+			}
+		}
+		offset = end + 1
+	}
+	return false
+}
+
 func (p *parser) parseStepExecRun(entries []workflowMappingEntry) *ExecRun {
 	ret := &ExecRun{}
 
@@ -1187,6 +1237,9 @@ func (p *parser) parseStepExecRun(entries []workflowMappingEntry) *ExecRun {
 		case "run":
 			ret.Run = p.parseString(e.val, false)
 			ret.RunPos = e.key.Pos
+			if e.val.Style == 0 && e.val.Line > e.key.Pos.Line && p.plainRunSpansMultipleLines(e.val) {
+				p.errorfAt(e.key.Pos, "multi-line \"run\" script must use a literal block scalar (run: |) instead of folding commands into one line")
+			}
 		case "shell":
 			ret.Shell = p.parseString(e.val, false)
 		case "working-directory":
@@ -1286,13 +1339,13 @@ func (p *parser) parseStepExecCancel(entries []workflowMappingEntry) *ExecCancel
 
 // parseStepExecParallel parses a 'parallel' step that runs a group of steps in parallel.
 // https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel/
-func (p *parser) parseStepExecParallel(entries []workflowMappingEntry) *ExecParallel {
+func (p *parser) parseStepExecParallel(entries []workflowMappingEntry, requireShell bool) *ExecParallel {
 	ret := &ExecParallel{}
 
 	for _, e := range entries {
 		switch e.id {
 		case "parallel":
-			ret.Steps = p.parseSteps(e.val)
+			ret.Steps = p.parseSteps(e.val, requireShell)
 		case "id", "if", "name", "env", "continue-on-error", "timeout-minutes":
 			// do nothing
 		default:
@@ -1312,7 +1365,7 @@ func (p *parser) parseStepExecParallel(entries []workflowMappingEntry) *ExecPara
 }
 
 // https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
-func (p *parser) parseStep(n *yaml.Node) *Step {
+func (p *parser) parseStep(n *yaml.Node, requireShell bool) *Step {
 	ret := &Step{Pos: posAt(n)}
 
 	const (
@@ -1341,6 +1394,9 @@ func (p *parser) parseStep(n *yaml.Node) *Step {
 			ret.ContinueOnError = p.parseBool(e.val)
 		case "timeout-minutes":
 			ret.TimeoutMinutes = p.parseTimeoutMinutes(e.val)
+			if requireShell {
+				p.errorAt(e.key.Pos, "\"timeout-minutes\" is not available in steps of composite actions")
+			}
 		case "background":
 			ret.Background = p.parseBool(e.val)
 		case "uses":
@@ -1367,12 +1423,15 @@ func (p *parser) parseStep(n *yaml.Node) *Step {
 		ret.Exec = p.parseStepExecAction(entries, kind == isDocker)
 	case isRun:
 		ret.Exec = p.parseStepExecRun(entries)
+		if requireShell && ret.Exec.(*ExecRun).Shell == nil {
+			p.error(n, "\"shell\" is required to run script in step as part of composite actions")
+		}
 	case isWait:
 		ret.Exec = p.parseStepExecWait(entries)
 	case isCancel:
 		ret.Exec = p.parseStepExecCancel(entries)
 	case isParallel:
-		ret.Exec = p.parseStepExecParallel(entries)
+		ret.Exec = p.parseStepExecParallel(entries, requireShell)
 	default:
 		p.error(n, "step must run script with \"run\" section or run action with \"uses\" section")
 	}
@@ -1381,7 +1440,7 @@ func (p *parser) parseStep(n *yaml.Node) *Step {
 }
 
 // https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
-func (p *parser) parseSteps(n *yaml.Node) []*Step {
+func (p *parser) parseSteps(n *yaml.Node, requireShell bool) []*Step {
 	if ok := p.checkSequence("steps", n, false); !ok {
 		return nil
 	}
@@ -1389,7 +1448,7 @@ func (p *parser) parseSteps(n *yaml.Node) []*Step {
 	ret := make([]*Step, 0, len(n.Content))
 
 	for _, c := range n.Content {
-		if s := p.parseStep(c); s != nil {
+		if s := p.parseStep(c, requireShell); s != nil {
 			ret = append(ret, s)
 		}
 	}
@@ -1511,7 +1570,7 @@ func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 		case "if":
 			ret.If = p.parseString(v, false)
 		case "steps":
-			ret.Steps = p.parseSteps(v)
+			ret.Steps = p.parseSteps(v, false)
 			stepsOnlyKey = k
 		case "timeout-minutes":
 			ret.TimeoutMinutes = p.parseTimeoutMinutes(v)
@@ -1626,9 +1685,210 @@ func (p *parser) parseJobs(n *yaml.Node) map[string]*Job {
 	return ret
 }
 
+func (p *parser) parseActionInput(name *String, n *yaml.Node) *ActionInput {
+	input := &ActionInput{Name: name}
+	for e := range p.parseMappingAt("input definition", n, false, true) {
+		switch e.id {
+		case "description":
+			input.Description = p.parseString(e.val, false)
+		case "required":
+			input.Required = p.parseBool(e.val)
+		case "default":
+			input.Default = p.parseString(e.val, true)
+		case "deprecationMessage":
+			input.DeprecationMessage = p.parseString(e.val, true)
+		default:
+			p.unexpectedKey(e.key, "input definition", []string{"description", "required", "default", "deprecationMessage"})
+		}
+	}
+	if input.Description == nil {
+		p.errorfAt(name.Pos, "\"description\" is required for input %q", name.Value)
+	}
+	return input
+}
+
+func (p *parser) parseActionOutputs(n *yaml.Node) map[string]*ActionOutput {
+	outputs := map[string]*ActionOutput{}
+	for e := range p.parseSectionMapping("outputs", n, false, false) {
+		output := &ActionOutput{Name: e.key}
+		for e := range p.parseMappingAt("output definition", e.val, false, true) {
+			switch e.id {
+			case "description":
+				output.Description = p.parseString(e.val, false)
+			case "value":
+				output.Value = p.parseString(e.val, false)
+			default:
+				p.unexpectedKey(e.key, "output definition", []string{"description", "value"})
+			}
+		}
+		outputs[e.id] = output
+	}
+	return outputs
+}
+
+func (p *parser) parseActionRuns(n *yaml.Node) ActionRuns {
+	entries := slices.Collect(p.parseSectionMapping("runs", n, false, true))
+	var using *String
+	for _, e := range entries {
+		if e.id == "using" {
+			using = p.parseString(e.val, false)
+			break
+		}
+	}
+	if using == nil {
+		p.error(n, "\"using\" is required in \"runs\" section")
+		return nil
+	}
+
+	switch using.Value {
+	case "node20", "node24":
+		runs := &JavaScriptActionRuns{Using: using}
+		for _, e := range entries {
+			switch e.id {
+			case "using":
+			case "main":
+				runs.Main = p.parseString(e.val, false)
+			case "pre":
+				runs.Pre = p.parseString(e.val, false)
+			case "pre-if":
+				runs.PreIf = p.parseString(e.val, false)
+			case "post":
+				runs.Post = p.parseString(e.val, false)
+			case "post-if":
+				runs.PostIf = p.parseString(e.val, false)
+			default:
+				p.unexpectedKey(e.key, "runs for JavaScript action", []string{"using", "main", "pre", "pre-if", "post", "post-if"})
+			}
+		}
+		if runs.Main == nil {
+			p.errorAt(using.Pos, "\"main\" is required in \"runs\" section for JavaScript actions")
+		}
+		return runs
+	case "docker":
+		runs := &DockerActionRuns{}
+		for _, e := range entries {
+			switch e.id {
+			case "using":
+			case "image":
+				runs.Image = p.parseString(e.val, false)
+			case "pre-entrypoint":
+				runs.PreEntrypoint = p.parseString(e.val, false)
+			case "entrypoint":
+				runs.Entrypoint = p.parseString(e.val, false)
+			case "post-entrypoint":
+				runs.PostEntrypoint = p.parseString(e.val, false)
+			case "args":
+				runs.Args = p.parseStringSequence("args", e.val, true, false)
+			case "env":
+				runs.Env = p.parseEnv(e.val)
+			default:
+				p.unexpectedKey(e.key, "runs for Docker action", []string{"using", "image", "pre-entrypoint", "entrypoint", "post-entrypoint", "args", "env"})
+			}
+		}
+		if runs.Image == nil {
+			p.errorAt(using.Pos, "\"image\" is required in \"runs\" section for Docker actions")
+		}
+		return runs
+	case "composite":
+		runs := &CompositeActionRuns{}
+		for _, e := range entries {
+			switch e.id {
+			case "using":
+			case "steps":
+				runs.Steps = p.parseSteps(e.val, true)
+			default:
+				p.unexpectedKey(e.key, "runs for composite action", []string{"using", "steps"})
+			}
+		}
+		if runs.Steps == nil {
+			p.errorAt(using.Pos, "\"steps\" is required in \"runs\" section for composite actions")
+		}
+		return runs
+	default:
+		p.errorfAt(using.Pos, "invalid runner name %q at \"runs.using\". valid runners are \"composite\", \"docker\", \"node20\", and \"node24\"", using.Value)
+		return nil
+	}
+}
+
+func (p *parser) parseActionBranding(n *yaml.Node) *ActionBranding {
+	branding := &ActionBranding{}
+	for e := range p.parseSectionMapping("branding", n, false, true) {
+		switch e.id {
+		case "icon":
+			branding.Icon = p.parseString(e.val, false)
+		case "color":
+			branding.Color = p.parseString(e.val, false)
+		default:
+			p.unexpectedKey(e.key, "branding", []string{"icon", "color"})
+		}
+	}
+	return branding
+}
+
+func (p *parser) parseAction(n *yaml.Node) *Action {
+	action := &Action{}
+	if n.Line == 0 {
+		n.Line = 1
+	}
+	if n.Column == 0 {
+		n.Column = 1
+	}
+	if len(n.Content) == 0 {
+		p.error(n, "action metadata is empty")
+		return action
+	}
+
+	for e := range p.parseSectionMapping("action metadata", n.Content[0], false, true) {
+		switch e.id {
+		case "name":
+			action.Name = p.parseString(e.val, false)
+		case "description":
+			action.Description = p.parseString(e.val, false)
+		case "author":
+			action.Author = p.parseString(e.val, false)
+		case "inputs":
+			action.Inputs = map[string]*ActionInput{}
+			for e := range p.parseSectionMapping("inputs", e.val, false, false) {
+				action.Inputs[e.id] = p.parseActionInput(e.key, e.val)
+			}
+		case "outputs":
+			action.Outputs = p.parseActionOutputs(e.val)
+		case "runs":
+			action.Runs = p.parseActionRuns(e.val)
+		case "branding":
+			action.Branding = p.parseActionBranding(e.val)
+		default:
+			p.unexpectedKey(e.key, "action metadata", []string{"name", "description", "author", "inputs", "outputs", "runs", "branding"})
+		}
+	}
+
+	if action.Name == nil {
+		p.error(n, "\"name\" is required in action metadata")
+	}
+	if action.Description == nil {
+		p.error(n, "\"description\" is required in action metadata")
+	}
+	if action.Runs == nil {
+		p.error(n, "\"runs\" is required in action metadata")
+	}
+	if _, ok := action.Runs.(*CompositeActionRuns); ok {
+		for _, output := range action.Outputs {
+			if output.Value == nil {
+				p.errorAt(output.Name.Pos, "\"value\" is required for outputs of composite actions")
+			}
+		}
+	} else if action.Runs != nil {
+		for _, output := range action.Outputs {
+			if output.Value != nil {
+				p.errorAt(output.Value.Pos, "\"value\" is only allowed for outputs of composite actions")
+			}
+		}
+	}
+	return action
+}
+
 // https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
-func (p *parser) parse(n *yaml.Node) *Workflow {
-	p.resolveAliases(n)
+func (p *parser) parseWorkflow(n *yaml.Node) *Workflow {
 
 	w := &Workflow{}
 
@@ -1726,21 +1986,91 @@ func handleYAMLUnmarshalError(err error) []*Error {
 	}}
 }
 
-// Parse parses given source as byte sequence into workflow syntax tree. It returns all errors
-// detected while parsing the input. It means that detecting one error does not stop parsing. Even
-// if one or more errors are detected, parser will try to continue parsing and finding more errors.
-func Parse(b []byte) (*Workflow, []*Error) {
-	var n yaml.Node
+// InputFormat controls which GitHub Actions YAML syntax is parsed.
+type InputFormat uint8
 
+const (
+	// FileAutoDetect chooses action metadata for action.yml/action.yaml and workflows otherwise.
+	FileAutoDetect InputFormat = iota
+	// FileWorkflow parses input as a workflow.
+	FileWorkflow
+	// FileAction parses input as an action metadata file.
+	FileAction
+)
+
+func selectInputFormat(path string, format InputFormat) InputFormat {
+	if format != FileAutoDetect {
+		return format
+	}
+	path = strings.ReplaceAll(path, "\\", "/")
+	if strings.Contains(path, "/.github/workflows/") || strings.HasPrefix(path, ".github/workflows/") {
+		return FileWorkflow
+	}
+	if strings.HasSuffix(path, "/action.yml") || strings.HasSuffix(path, "/action.yaml") || path == "action.yml" || path == "action.yaml" {
+		return FileAction
+	}
+	return FileWorkflow
+}
+
+// collectInlineIgnores associates a comment immediately before a YAML node with
+// diagnostics reported at that node's line. Block scalar contents are not YAML
+// comments, so directives in scripts cannot suppress unrelated diagnostics.
+func (p *parser) collectInlineIgnores(node *yaml.Node) {
+	if strings.Contains(node.HeadComment, "yactionlint ignore=") {
+		for _, line := range strings.Split(node.HeadComment, "\n") {
+			line = strings.TrimSpace(line)
+			const prefix = "# yactionlint ignore="
+			if !strings.HasPrefix(line, prefix) {
+				continue
+			}
+			pattern := strings.TrimSpace(strings.TrimPrefix(line, prefix))
+			if pattern == "" {
+				p.error(node, "inline ignore pattern must not be empty")
+				continue
+			}
+			re, err := regexp.Compile(pattern)
+			if err != nil {
+				p.errorf(node, "invalid inline ignore pattern %q: %v", pattern, err)
+				continue
+			}
+			if p.ignores == nil {
+				p.ignores = make(map[int][]*regexp.Regexp)
+			}
+			p.ignores[node.Line] = append(p.ignores[node.Line], re)
+		}
+	}
+	for _, child := range node.Content {
+		p.collectInlineIgnores(child)
+	}
+}
+
+// ParseFile parses a workflow or action metadata file. It returns its selected input format together
+// with any syntax errors found while parsing.
+func ParseFile(path string, b []byte, format InputFormat) (*Workflow, *Action, InputFormat, []*Error) {
+	w, a, selected, _, errs := parseFile(path, b, format)
+	return w, a, selected, errs
+}
+
+func parseFile(path string, b []byte, format InputFormat) (*Workflow, *Action, InputFormat, map[int][]*regexp.Regexp, []*Error) {
+	var n yaml.Node
 	if err := yaml.Unmarshal(b, &n); err != nil {
-		return nil, handleYAMLUnmarshalError(err)
+		return nil, nil, format, nil, handleYAMLUnmarshalError(err)
 	}
 
-	// Uncomment for checking YAML tree
-	// dumpYAML(&n, 0)
+	p := &parser{source: b}
+	p.resolveAliases(&n)
+	p.collectInlineIgnores(&n)
+	format = selectInputFormat(path, format)
+	if format == FileAction {
+		a := p.parseAction(&n)
+		return nil, a, format, p.ignores, p.errors
+	}
+	w := p.parseWorkflow(&n)
+	return w, nil, format, p.ignores, p.errors
+}
 
-	p := &parser{}
-	w := p.parse(&n)
-
-	return w, p.errors
+// Parse parses input as a workflow. It is kept for API compatibility.
+func Parse(b []byte) (*Workflow, []*Error) {
+	w, _, _, errs := ParseFile("<stdin>", b, FileWorkflow)
+	return w, errs
 }

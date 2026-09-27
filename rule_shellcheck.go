@@ -103,6 +103,12 @@ func (rule *RuleShellcheck) VisitWorkflowPost(n *Workflow) error {
 	return rule.cmd.wait() // Wait until all processes running for this rule
 }
 
+// VisitActionPost is callback after visiting an action metadata file.
+func (rule *RuleShellcheck) VisitActionPost(n *Action) error {
+	rule.workflowShell = ""
+	return rule.cmd.wait()
+}
+
 func (rule *RuleShellcheck) getShellName(exec *ExecRun) string {
 	if exec.Shell != nil {
 		return exec.Shell.Value

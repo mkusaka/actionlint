@@ -1,0 +1,36 @@
+on: push
+
+jobs:
+  invalid:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scalar: [foo]
+        array:
+          - [foo]
+        object:
+          - foo: bar
+        include:
+          - scalar: [foo]
+          - array: foo
+          - object: foo
+          - scalar: ${{ fromJSON('["foo"]') }}
+          - array: [bar]
+          - object: {foo: baz}
+        exclude:
+          - scalar: [foo]
+          - array: foo
+          - object: foo
+    steps:
+      - run: echo ok
+  dynamic:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        value:
+          - foo
+          - ${{ fromJSON('["foo"]') }}
+        include:
+          - value: [foo]
+    steps:
+      - run: echo ok

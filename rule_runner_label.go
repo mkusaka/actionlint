@@ -11,6 +11,7 @@ const (
 	compatInvalid                   = 0
 	compatUbuntu2204 runnerOSCompat = 1 << iota
 	compatUbuntu2404
+	compatUbuntu2604
 	compatMacOS140
 	compatMacOS140L
 	compatMacOS140XL
@@ -22,10 +23,13 @@ const (
 	compatMacOS260Intel
 	compatMacOS260L
 	compatMacOS260XL
+	compatMacOS270
+	compatMacOS270XL
 	compatWindows2022
 	compatWindows2025
 	compatWindows2025VS2026
 	compatWindows11Arm
+	compatWindows11VS2026Arm
 )
 
 // https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
@@ -36,11 +40,14 @@ var allGitHubHostedRunnerLabels = []string{
 	"windows-2025-vs2026",
 	"windows-2022",
 	"windows-11-arm",
+	"windows-11-vs2026-arm",
 	"ubuntu-slim",
 	"ubuntu-latest",
 	"ubuntu-latest-4-cores",
 	"ubuntu-latest-8-cores",
 	"ubuntu-latest-16-cores",
+	"ubuntu-26.04",
+	"ubuntu-26.04-arm",
 	"ubuntu-24.04",
 	"ubuntu-24.04-arm",
 	"ubuntu-22.04",
@@ -52,6 +59,8 @@ var allGitHubHostedRunnerLabels = []string{
 	"macos-26-xlarge",
 	"macos-26-large",
 	"macos-26",
+	"xcode-27-xlarge",
+	"xcode-27",
 	"macos-15-intel",
 	"macos-15-xlarge",
 	"macos-15-large",
@@ -82,6 +91,8 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"ubuntu-latest-4-cores":  compatUbuntu2404,
 	"ubuntu-latest-8-cores":  compatUbuntu2404,
 	"ubuntu-latest-16-cores": compatUbuntu2404,
+	"ubuntu-26.04":           compatUbuntu2604,
+	"ubuntu-26.04-arm":       compatUbuntu2604,
 	"ubuntu-24.04":           compatUbuntu2404,
 	"ubuntu-24.04-arm":       compatUbuntu2404,
 	"ubuntu-22.04":           compatUbuntu2204,
@@ -93,6 +104,8 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"macos-26-xlarge":        compatMacOS260XL,
 	"macos-26-large":         compatMacOS260L,
 	"macos-26":               compatMacOS260,
+	"xcode-27-xlarge":        compatMacOS270XL,
+	"xcode-27":               compatMacOS270,
 	"macos-15-intel":         compatMacOS150Intel,
 	"macos-15-xlarge":        compatMacOS150XL,
 	"macos-15-large":         compatMacOS150L,
@@ -106,9 +119,10 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"windows-2025-vs2026":    compatWindows2025VS2026,
 	"windows-2022":           compatWindows2022,
 	"windows-11-arm":         compatWindows11Arm,
-	"linux":                  compatUbuntu2404 | compatUbuntu2204, // Note: "linux" does not always indicate Ubuntu. It might be Fedora or Arch or ...
-	"macos":                  compatMacOS260 | compatMacOS260Intel | compatMacOS260L | compatMacOS260XL | compatMacOS150 | compatMacOS150Intel | compatMacOS150L | compatMacOS150XL | compatMacOS140 | compatMacOS140L | compatMacOS140XL,
-	"windows":                compatWindows2025VS2026 | compatWindows2025 | compatWindows2022 | compatWindows11Arm,
+	"windows-11-vs2026-arm":  compatWindows11VS2026Arm,
+	"linux":                  compatUbuntu2604 | compatUbuntu2404 | compatUbuntu2204, // Note: "linux" does not always indicate Ubuntu. It might be Fedora or Arch or ...
+	"macos":                  compatMacOS270 | compatMacOS270XL | compatMacOS260 | compatMacOS260Intel | compatMacOS260L | compatMacOS260XL | compatMacOS150 | compatMacOS150Intel | compatMacOS150L | compatMacOS150XL | compatMacOS140 | compatMacOS140L | compatMacOS140XL,
+	"windows":                compatWindows2025VS2026 | compatWindows2025 | compatWindows2022 | compatWindows11Arm | compatWindows11VS2026Arm,
 }
 
 // RuleRunnerLabel is a rule to check runner label like "ubuntu-latest". There are two types of
@@ -237,39 +251,28 @@ func (rule *RuleRunnerLabel) tryToGetLabelsInMatrix(label *String, m *Matrix) []
 		return nil
 	}
 
-	// Only when the form of "${{...}}", evaluate the expression
-	if !label.IsExpressionAssigned() {
-		return nil
-	}
-
-	l := strings.TrimSpace(label.Value)
-	p := NewExprParser()
-	expr, err := p.Parse(NewExprLexer(l[3:])) // 3 means omit first "${{"
-	if err != nil {
-		return nil
-	}
-
-	deref, ok := expr.(*ObjectDerefNode)
+	prefix, suffix, prop, ok := parseMatrixLabelTemplate(label.Value)
 	if !ok {
 		return nil
 	}
-	recv, ok := deref.Receiver.(*VariableNode)
-	if !ok {
-		return nil
-	}
-	if recv.Name != "matrix" {
-		return nil
-	}
 
-	prop := deref.Property
 	labels := []*String{}
+	appendLabel := func(v RawYAMLValue) {
+		s, ok := v.(*RawYAMLString)
+		if !ok {
+			return
+		}
+		value, ok := resolveLiteralInterpolations(s.Value)
+		if !ok {
+			return
+		}
+		labels = append(labels, &String{prefix + value + suffix, false, s.Pos()})
+	}
 
 	if m.Rows != nil {
 		if row, ok := m.Rows[prop]; ok {
 			for _, v := range row.Values {
-				if s, ok := v.(*RawYAMLString); ok && !ContainsExpression(s.Value) {
-					labels = append(labels, &String{s.Value, false, s.Pos()})
-				}
+				appendLabel(v)
 			}
 		}
 	}
@@ -278,15 +281,87 @@ func (rule *RuleRunnerLabel) tryToGetLabelsInMatrix(label *String, m *Matrix) []
 		for _, combi := range m.Include.Combinations {
 			if combi.Assigns != nil {
 				if assign, ok := combi.Assigns[prop]; ok {
-					if s, ok := assign.Value.(*RawYAMLString); ok && !ContainsExpression(s.Value) {
-						labels = append(labels, &String{s.Value, false, s.Pos()})
-					}
+					appendLabel(assign.Value)
 				}
 			}
 		}
 	}
 
 	return labels
+}
+
+func parseMatrixLabelTemplate(s string) (string, string, string, bool) {
+	var prefix, suffix, prop string
+	for {
+		start := strings.Index(s, "${{")
+		if start < 0 {
+			if prop == "" {
+				prefix += s
+			} else {
+				suffix += s
+			}
+			break
+		}
+		if prop == "" {
+			prefix += s[:start]
+		} else {
+			suffix += s[:start]
+		}
+		s = s[start+3:]
+		end := strings.Index(s, "}}")
+		if end < 0 {
+			return "", "", "", false
+		}
+		expr, err := NewExprParser().Parse(NewExprLexer(s[:end] + "}}"))
+		if err != nil {
+			return "", "", "", false
+		}
+		switch e := expr.(type) {
+		case *StringNode:
+			if prop == "" {
+				prefix += e.Value
+			} else {
+				suffix += e.Value
+			}
+		case *ObjectDerefNode:
+			recv, ok := e.Receiver.(*VariableNode)
+			if !ok || recv.Name != "matrix" || prop != "" {
+				return "", "", "", false
+			}
+			prop = e.Property
+		default:
+			return "", "", "", false
+		}
+		s = s[end+2:]
+	}
+	return prefix, suffix, prop, prop != ""
+}
+
+func resolveLiteralInterpolations(s string) (string, bool) {
+	var resolved strings.Builder
+	for {
+		start := strings.Index(s, "${{")
+		if start < 0 {
+			resolved.WriteString(s)
+			return resolved.String(), true
+		}
+		resolved.WriteString(s[:start])
+		s = s[start+3:]
+		end := strings.Index(s, "}}")
+		if end < 0 {
+			return "", false
+		}
+		expr, err := NewExprParser().Parse(NewExprLexer(s[:end] + "}}"))
+		if err != nil {
+			return "", false
+		}
+		literal, ok := expr.(*StringNode)
+		if !ok {
+			return "", false
+		}
+		resolved.WriteString(literal.Value)
+		s = s[end+2:]
+	}
 }
 
 func (rule *RuleRunnerLabel) checkConflict(comp runnerOSCompat, label *String) bool {

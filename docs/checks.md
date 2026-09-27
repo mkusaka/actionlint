@@ -43,6 +43,36 @@ List of checks:
 - [Action metadata syntax validation](#action-metadata-syntax)
 - [Deprecated inputs usage](#deprecated-inputs-usage)
 - [YAML anchors](#yaml-anchors)
+- [Additional fork checks](#fork-checks)
+
+<a id="fork-checks"></a>
+## Additional fork checks
+
+These checks are not necessarily available in the external upstream playground:
+
+- Parallel steps: `wait:` and `cancel:` must reference an earlier `background: true` step; a `parallel:`
+  group cannot contain background, wait, cancel, or nested parallel steps.
+- Matrix `include:` and `exclude:` values must have valid scalar types; `exclude:` values are checked
+  against the base matrix, before `include:` values are added.
+- Constant comparisons of `github.event_name` against events absent from `on:` are reported. In a
+  reusable workflow, the caller's event name is unknown and this check is skipped.
+- Constant `on.workflow_run.workflows` names must refer to workflows in the same project when the
+  workflow directory can be read completely.
+- A local reusable workflow cannot request token permissions unavailable to the caller.
+- A local reusable workflow using the same statically known workflow-level concurrency group as
+  its caller is reported as a potential deadlock; dynamic groups are compared only when expressions
+  refer to contexts shared by the caller and callee.
+- A falsy literal (`''`, `false`, `0`, or `null`) as the true branch of
+  `condition && value || fallback` makes the fallback unconditional and is reported.
+- When the only trigger is an exact push branch, a redundant `github.ref` equality test for that
+  branch in a job or step condition is reported. Matrix runner-label expressions are checked when
+  the matrix value and interpolation resolve to a static label.
+- The optional policies in [configuration](config.md) can require job timeouts, explicit token
+  permissions, required actions, exact action versions or commit hashes, and `${{ ... }}` around `if:`.
+- A plain multi-line `run:` scalar is rejected because YAML folds its commands into one line; write
+  `run: |` instead. A spaced expression prefix such as `$ {{ vars.NAME }}` is also reported.
+- Action metadata can be checked directly, including composite action steps, output expressions,
+  branding, and the unsupported `timeout-minutes` key in composite steps.
 
 Note that yactionlint focuses on catching mistakes in workflow files. If you want some general code style checks, please consider
 using a general YAML checker like [yamllint][]. All `Playground` links below open the external upstream actionlint playground.
@@ -1265,9 +1295,11 @@ test.yaml:12:13: "platform" in "exclude" section does not exist in matrix. avail
 [Playground](https://rhysd.github.io/actionlint/#eNpskMGOhCAQRO9+RR32KER298SvmD2gsuNMlDY0JE6M/z4h4jgmHggpqHrpanIaU+S+eFDDugCC5ZBugIM3wd6emwJGE/x93hXgqLMatapKqO8S6jedv/c3sUYdm+hCFINJ2BKjaYmzOpx2bofY2YMMiExXPx+PG/OEvIpUp8g0mPBPfrwK+uhYpA18LUuuJ4mxrrm/nXgfSiSzhm17gpTyFQAA//9UwlNB)
 
 [`matrix:`][matrix-doc] defines combinations of multiple values. Nested `include:` and `exclude:` can add/remove specific
-combination of matrix values. actionlint checks
+combinations. yactionlint checks:
 
-- values in `exclude:` appear in `matrix:` or `include:`
+- values in `exclude:` appear in the base `matrix:` values (before `include:` is applied)
+- constant `include:` values match the types of the corresponding matrix rows
+- `include:` and `exclude:` values are not arrays or objects where scalars are required
 - duplicate variations of matrix values
 
 <a id="check-webhook-events"></a>

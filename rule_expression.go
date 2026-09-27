@@ -66,6 +66,7 @@ func (rule *RuleExpression) VisitWorkflowPre(n *Workflow) error {
 	for _, e := range n.On {
 		switch e := e.(type) {
 		case *WebhookEvent:
+			rule.checkIfCondition(e.If, "on.<event>.if")
 			rule.checkStrings(e.Types, "")
 			rule.checkWebhookEventFilter(e.Branches)
 			rule.checkWebhookEventFilter(e.BranchesIgnore)
@@ -80,6 +81,7 @@ func (rule *RuleExpression) VisitWorkflowPre(n *Workflow) error {
 				rule.checkString(s.Timezone, "")
 			}
 		case *WorkflowDispatchEvent:
+			rule.checkIfCondition(e.If, "on.workflow_dispatch.if")
 			ity := NewEmptyStrictObjectType()
 			for id, i := range e.Inputs {
 				rule.checkString(i.Description, "")
@@ -102,6 +104,7 @@ func (rule *RuleExpression) VisitWorkflowPre(n *Workflow) error {
 			}
 			rule.dispatchInputsTy = ity
 		case *RepositoryDispatchEvent:
+			rule.checkIfCondition(e.If, "on.repository_dispatch.if")
 			rule.checkStrings(e.Types, "")
 		case *WorkflowCallEvent:
 			ity := NewEmptyStrictObjectType()
@@ -196,6 +199,41 @@ func (rule *RuleExpression) VisitWorkflowPost(n *Workflow) error {
 		rule.checkWorkflowCallOutputs(e.Outputs, n.Jobs)
 	}
 	rule.workflow = nil
+	return nil
+}
+
+// VisitActionPre is callback before visiting an action metadata file.
+func (rule *RuleExpression) VisitActionPre(action *Action) error {
+	rule.needsTy = NewEmptyStrictObjectType()
+	rule.stepsTy = NewEmptyStrictObjectType()
+	rule.inputsTy = NewEmptyStrictObjectType()
+
+	for id := range action.Inputs {
+		rule.inputsTy.Props[id] = AnyType{}
+	}
+	for _, input := range action.Inputs {
+		rule.checkString(input.Default, "concurrency")
+	}
+
+	switch runs := action.Runs.(type) {
+	case *JavaScriptActionRuns:
+		rule.checkIfCondition(runs.PreIf, "jobs.<job_id>.steps.if")
+		rule.checkIfCondition(runs.PostIf, "jobs.<job_id>.steps.if")
+	case *DockerActionRuns:
+		rule.checkEnv(runs.Env, "env")
+	}
+	return nil
+}
+
+// VisitActionPost is callback after visiting an action metadata file.
+func (rule *RuleExpression) VisitActionPost(action *Action) error {
+	for _, output := range action.Outputs {
+		rule.checkString(output.Value, "jobs.<job_id>.outputs.<output_id>")
+	}
+	rule.matrixTy = nil
+	rule.stepsTy = nil
+	rule.needsTy = nil
+	rule.inputsTy = nil
 	return nil
 }
 
@@ -754,9 +792,22 @@ func (rule *RuleExpression) checkExprsIn(s string, pos *Pos, quoted, checkUntrus
 	offset := 0
 	ts := []typedExpr{}
 	for {
-		idx := strings.Index(s, "${{")
+		idx := strings.IndexByte(s, '$')
 		if idx == -1 {
 			break
+		}
+		if !strings.HasPrefix(s[idx:], "${{") {
+			rest := s[idx+1:]
+			spaces := 0
+			for spaces < len(rest) && (rest[spaces] == ' ' || rest[spaces] == '\t') {
+				spaces++
+			}
+			if workflowKey != "" && spaces > 0 && strings.HasPrefix(rest[spaces:], "{{") {
+				rule.Error(pos, "malformed expression prefix \"$ {{\"; remove the space after \"$\"")
+			}
+			s = s[idx+1:]
+			offset += idx + 1
+			continue
 		}
 
 		start := idx + 3 // 3 means removing "${{"
@@ -791,6 +842,9 @@ func (rule *RuleExpression) checkSemanticsOfExprNode(expr ExprNode, line, col in
 		v = rule.config.ConfigVariables
 	}
 	c := NewExprSemanticsChecker(checkUntrusted, v)
+	if rule.config != nil {
+		c.configSecrets = rule.config.ConfigSecrets
+	}
 	if rule.matrixTy != nil {
 		c.UpdateMatrix(rule.matrixTy)
 	}
@@ -814,6 +868,10 @@ func (rule *RuleExpression) checkSemanticsOfExprNode(expr ExprNode, line, col in
 	}
 	if workflowKey != "" {
 		ctx, sp := WorkflowKeyAvailability(workflowKey)
+		if strings.HasPrefix(workflowKey, "on.") && strings.HasSuffix(workflowKey, ".if") {
+			// Conditional event triggers are newer than the generated GitHub context-availability table.
+			ctx = []string{"github", "inputs", "vars"}
+		}
 		if len(ctx) == 0 {
 			rule.Debug("No context availability was found for workflow key %q", workflowKey)
 		}

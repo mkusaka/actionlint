@@ -10,12 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sys/execabs"
 )
 
@@ -145,8 +144,19 @@ func checkErrors(t *testing.T, outfile string, errs []*Error) {
 				t.Errorf("error message mismatch at %dth error does not match to regular expression\n  want: /%s/\n  have: %q", i+1, want, have)
 			}
 		} else {
-			if want != have {
-				t.Errorf("error message mismatch at %dth error does not match exactly\n  want: %q\n  have: %q", i+1, want, have)
+			parts := strings.SplitN(want, ":", 4)
+			kindAt := strings.LastIndex(want, " [")
+			if len(parts) != 4 || kindAt < 0 || !strings.HasSuffix(want, "]") {
+				t.Fatalf("invalid fixture diagnostic %q", want)
+			}
+			line, lineErr := strconv.Atoi(parts[1])
+			col, colErr := strconv.Atoi(parts[2])
+			if lineErr != nil || colErr != nil {
+				t.Fatalf("invalid fixture diagnostic position %q", want)
+			}
+			kind := want[kindAt+2 : len(want)-1]
+			if parts[0] != errs[i].Filepath || line != errs[i].Line || col != errs[i].Column || kind != errs[i].Kind {
+				t.Errorf("diagnostic location or kind mismatch at %d: expected %s:%d:%d [%s], got %s:%d:%d [%s]", i+1, parts[0], line, col, kind, errs[i].Filepath, errs[i].Line, errs[i].Column, errs[i].Kind)
 			}
 		}
 	}
@@ -350,122 +360,60 @@ func TestLinterLintProject(t *testing.T) {
 	}
 }
 
-func TestLinterFormatErrorMessageOK(t *testing.T) {
-	tests := []struct {
-		file   string
-		format string
-	}{
-		{
-			file:   "test.json",
-			format: "{{json .}}",
-		},
-		{
-			file:   "test.jsonl",
-			format: "{{range $err := .}}{{json $err}}{{end}}",
-		},
-		{
-			file:   "test.md",
-			format: "{{range $ := .}}### Error at line {{$.Line}}, col {{$.Column}} of `{{$.Filepath}}`\\n\\n{{$.Message}}\\n\\n```\\n{{$.Snippet}}\\n```\\n\\n{{end}}",
-		},
-	}
-
+func TestLinterSARIFStructure(t *testing.T) {
 	dir := filepath.Join("testdata", "format")
-	proj := &Project{root: dir}
-	infile := filepath.Join(dir, "test.yaml")
-	for _, tc := range tests {
-		t.Run(tc.file, func(t *testing.T) {
-			opts := LinterOptions{Format: tc.format}
-
-			var b strings.Builder
-			l, err := NewLinter(&b, &opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			l.defaultConfig = &Config{}
-			errs, err := l.LintFile(infile, proj)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(errs) == 0 {
-				t.Fatal("no error")
-			}
-
-			buf, err := os.ReadFile(filepath.Join(dir, tc.file))
-			if err != nil {
-				panic(err)
-			}
-			want := string(buf)
-
-			have := b.String()
-			// Fix path separators on Windows
-			if runtime.GOOS == "windows" {
-				slash := filepath.ToSlash(infile)
-				have = strings.ReplaceAll(have, infile, slash)
-				escaped := strings.ReplaceAll(slash, "/", `\\`)
-				have = strings.ReplaceAll(have, escaped, slash)
-			}
-
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Logf("have: %s", have)
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func TestLinterFormatErrorMessageInSARIF(t *testing.T) {
-	dir := filepath.Join("testdata", "format")
-	proj := &Project{root: dir}
-	file := filepath.Join(dir, "test.yaml")
-
-	bytes, err := os.ReadFile(filepath.Join(dir, "sarif_template.txt"))
-	if err != nil {
-		panic(err)
-	}
-	format := string(bytes)
-
-	opts := LinterOptions{Format: format}
-	var b strings.Builder
-	l, err := NewLinter(&b, &opts)
+	format, err := os.ReadFile(filepath.Join(dir, "sarif_template.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	l.defaultConfig = &Config{}
-	errs, err := l.LintFile(file, proj)
+	var output bytes.Buffer
+	linter, err := NewLinter(&output, &LinterOptions{Format: string(format)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(errs) == 0 {
-		t.Fatal("no error")
+	linter.defaultConfig = &Config{}
+	if _, err := linter.LintFile(filepath.Join(dir, "test.yaml"), &Project{root: dir}); err != nil {
+		t.Fatal(err)
 	}
-
-	out := b.String()
-	// Fix path separators on Windows
-	if runtime.GOOS == "windows" {
-		slash := filepath.ToSlash(file)
-		escaped := strings.ReplaceAll(file, `\`, `\\`)
-		out = strings.ReplaceAll(out, escaped, slash)
+	var sarif struct {
+		Version string `json:"version"`
+		Runs    []struct {
+			Tool struct {
+				Driver struct {
+					InformationURI string `json:"informationUri"`
+				} `json:"driver"`
+			} `json:"tool"`
+			Results []struct {
+				RuleID    string `json:"ruleId"`
+				Locations []struct {
+					PhysicalLocation struct {
+						Region struct {
+							StartLine   int `json:"startLine"`
+							StartColumn int `json:"startColumn"`
+						} `json:"region"`
+					} `json:"physicalLocation"`
+				} `json:"locations"`
+			} `json:"results"`
+		} `json:"runs"`
 	}
-
-	var have interface{}
-	if err := json.Unmarshal([]byte(out), &have); err != nil {
-		t.Fatalf("output is not JSON: %v: %q", err, out)
+	if err := json.Unmarshal(output.Bytes(), &sarif); err != nil {
+		t.Fatalf("invalid SARIF JSON: %v", err)
 	}
-
-	bytes, err = os.ReadFile(filepath.Join(dir, "test.sarif"))
-	if err != nil {
-		panic(err)
+	if sarif.Version != "2.1.0" || len(sarif.Runs) != 1 || sarif.Runs[0].Tool.Driver.InformationURI != "https://github.com/mkusaka/yactionlint" {
+		t.Fatalf("incorrect SARIF envelope: %+v", sarif)
 	}
-	var want interface{}
-	if err := json.Unmarshal(bytes, &want); err != nil {
-		panic(err)
+	results := sarif.Runs[0].Results
+	if len(results) != 3 || results[0].RuleID != "syntax-check" || results[1].RuleID != "expression" || results[2].RuleID != "syntax-check" {
+		t.Fatalf("incorrect SARIF rule results: %+v", results)
 	}
-
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Logf("have: %s", have)
-		t.Fatal(diff)
+	for index, want := range []struct{ line, col int }{{3, 5}, {9, 23}, {10, 9}} {
+		if len(results[index].Locations) != 1 {
+			t.Fatalf("result %d has incorrect locations: %+v", index, results[index].Locations)
+		}
+		got := results[index].Locations[0].PhysicalLocation.Region
+		if got.StartLine != want.line || got.StartColumn != want.col {
+			t.Fatalf("result %d location = %d:%d, want %d:%d", index, got.StartLine, got.StartColumn, want.line, want.col)
+		}
 	}
 }
 

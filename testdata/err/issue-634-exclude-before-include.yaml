@@ -1,0 +1,19 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        php: [3, 4]
+        exclude:
+          - os: ubuntu-latest
+            php: 5
+          - os: macos-latest
+            php: 2
+        include:
+          - os: macos-latest
+            php: 2
+    steps:
+      - run: echo ok

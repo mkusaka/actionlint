@@ -83,6 +83,8 @@ type LinterOptions struct {
 	// StdinFileName is a file name when reading input from stdin. When this value is empty, "<stdin>"
 	// is used as the default value.
 	StdinFileName string
+	// InputFormat selects workflow syntax, action metadata syntax, or filename-based detection.
+	InputFormat InputFormat
 	// WorkingDir is a file path to the current working directory. When this value is empty, os.Getwd
 	// will be used to get a working directory.
 	WorkingDir string
@@ -109,6 +111,7 @@ type Linter struct {
 	errFmt         *ErrorFormatter
 	cwd            string
 	onRulesCreated func([]Rule) []Rule
+	inputFormat    InputFormat
 }
 
 // NewLinter creates a new Linter instance.
@@ -193,6 +196,7 @@ func NewLinter(out io.Writer, opts *LinterOptions) (*Linter, error) {
 		formatter,
 		cwd,
 		opts.OnRulesCreated,
+		opts.InputFormat,
 	}
 
 	l.debug("Create a Linter instance with option %#v", opts)
@@ -332,6 +336,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*Error, erro
 	dbg := l.debugWriter()
 	acf := NewLocalActionsCacheFactory(dbg)
 	rwcf := NewLocalReusableWorkflowCacheFactory(cwd, dbg)
+	wncf := NewWorkflowNamesCacheFactory()
 
 	type workspace struct {
 		path string
@@ -360,6 +365,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*Error, erro
 		}
 		ac := acf.GetCache(proj) // #173
 		rwc := rwcf.GetCache(proj)
+		workflowNames := wncf.GetCache(proj)
 
 		eg.Go(func() error {
 			// Bound concurrency on reading files to avoid "too many files to open" error (issue #3)
@@ -375,7 +381,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*Error, erro
 					w.path = r // Use relative path if possible
 				}
 			}
-			errs, err := l.check(w.path, src, proj, proc, ac, rwc)
+			errs, err := l.check(w.path, src, proj, proc, ac, rwc, workflowNames)
 			if err != nil {
 				return fmt.Errorf("fatal error while checking %s: %w", w.path, err)
 			}
@@ -454,7 +460,8 @@ func (l *Linter) LintFile(path string, project *Project) ([]*Error, error) {
 	dbg := l.debugWriter()
 	localActions := NewLocalActionsCache(project, dbg)
 	localReusableWorkflows := NewLocalReusableWorkflowCache(project, l.cwd, dbg)
-	errs, err := l.check(path, src, project, proc, localActions, localReusableWorkflows)
+	workflowNames := NewWorkflowNamesCache(project)
+	errs, err := l.check(path, src, project, proc, localActions, localReusableWorkflows, workflowNames)
 	proc.wait()
 	if err != nil {
 		return nil, err
@@ -497,7 +504,8 @@ func (l *Linter) Lint(path string, content []byte, project *Project) ([]*Error, 
 	dbg := l.debugWriter()
 	localActions := NewLocalActionsCache(project, dbg)
 	localReusableWorkflows := NewLocalReusableWorkflowCache(project, l.cwd, dbg)
-	errs, err := l.check(path, content, project, proc, localActions, localReusableWorkflows)
+	workflowNames := NewWorkflowNamesCache(project)
+	errs, err := l.check(path, content, project, proc, localActions, localReusableWorkflows, workflowNames)
 	proc.wait()
 	if err != nil {
 		return nil, err
@@ -517,6 +525,7 @@ func (l *Linter) check(
 	proc *concurrentProcess,
 	localActions *LocalActionsCache,
 	localReusableWorkflows *LocalReusableWorkflowCache,
+	workflowNames *WorkflowNamesCache,
 ) ([]*Error, error) {
 	// Note: This method is called to check multiple files in parallel.
 	// It must be thread safe assuming fields of Linter are not modified while running.
@@ -544,32 +553,56 @@ func (l *Linter) check(
 		l.debug("No config was found")
 	}
 
-	w, all := Parse(content)
+	w, action, _, inlineIgnores, all := parseFile(path, content, l.inputFormat)
 
 	if l.logLevel >= LogLevelVerbose {
 		elapsed := time.Since(start)
 		l.log("Found", len(all), "parse errors in", elapsed.Milliseconds(), "ms for", path)
 	}
 
-	if w != nil {
+	if w != nil || action != nil {
 		dbg := l.debugWriter()
 
-		rules := []Rule{
-			NewRuleMatrix(),
-			NewRuleCredentials(),
-			NewRuleShellName(),
-			NewRuleRunnerLabel(),
-			NewRuleEvents(),
-			NewRuleJobNeeds(),
-			NewRuleAction(localActions),
-			NewRuleEnvVar(),
-			NewRuleID(),
-			NewRuleGlob(),
-			NewRulePermissions(),
-			NewRuleWorkflowCall(path, localReusableWorkflows),
-			NewRuleExpression(localActions, localReusableWorkflows),
-			NewRuleDeprecatedCommands(),
-			NewRuleIfCond(),
+		var rules []Rule
+		if w != nil {
+			rules = []Rule{
+				NewRuleMatrix(),
+				NewRuleTimeoutCheck(),
+				NewRuleCredentials(),
+				NewRuleShellName(),
+				NewRuleRunnerLabel(),
+				NewRuleEvents(),
+				NewRuleEventCondition(),
+				NewRuleJobNeeds(),
+				NewRuleParallelSteps(),
+				NewRuleAction(localActions),
+				NewRuleActionVersion(),
+				NewRuleRequiredActions(),
+				NewRuleEnvVar(),
+				NewRuleID(),
+				NewRuleGlob(),
+				NewRulePermissions(),
+				NewRuleExplicitPermissions(),
+				NewRuleWorkflowRunNames(workflowNames, path),
+				NewRuleWorkflowCall(path, localReusableWorkflows),
+				NewRuleExpression(localActions, localReusableWorkflows),
+				NewRuleDeprecatedCommands(),
+				NewRuleIfCond(),
+				NewRuleExplicitIfExpressions(),
+			}
+		} else {
+			rules = []Rule{
+				NewRuleActionMetadata(),
+				NewRuleAction(localActions),
+				NewRuleActionVersion(),
+				NewRuleExpression(localActions, localReusableWorkflows),
+				NewRuleID(),
+				NewRuleEnvVar(),
+				NewRuleShellName(),
+				NewRuleDeprecatedCommands(),
+				NewRuleIfCond(),
+				NewRuleExplicitIfExpressions(),
+			}
 		}
 		if l.shellcheck != "" {
 			r, err := NewRuleShellcheck(l.shellcheck, proc)
@@ -611,8 +644,13 @@ func (l *Linter) check(
 			}
 		}
 
-		if err := v.Visit(w); err != nil {
-			l.debug("Error occurred while visiting workflow syntax tree: %v", err)
+		if w != nil {
+			if err := v.Visit(w); err != nil {
+				l.debug("Error occurred while visiting workflow syntax tree: %v", err)
+				return nil, err
+			}
+		} else if err := v.VisitAction(action); err != nil {
+			l.debug("Error occurred while visiting action metadata syntax tree: %v", err)
 			return nil, err
 		}
 
@@ -630,6 +668,22 @@ func (l *Linter) check(
 	}
 
 	all = l.filterErrors(all, cfg.PathConfigs(path))
+	if len(inlineIgnores) != 0 {
+		filtered := all[:0]
+		for _, finding := range all {
+			suppressed := false
+			for _, pattern := range inlineIgnores[finding.Line] {
+				if pattern.MatchString(finding.Message) {
+					suppressed = true
+					break
+				}
+			}
+			if !suppressed {
+				filtered = append(filtered, finding)
+			}
+		}
+		all = filtered
+	}
 
 	for _, err := range all {
 		err.Filepath = path // Populate filename in the error

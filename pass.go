@@ -20,6 +20,14 @@ type Pass interface {
 	VisitWorkflowPost(node *Workflow) error
 }
 
+// ActionPass receives callbacks while visiting an action metadata syntax tree.
+type ActionPass interface {
+	// VisitActionPre is called before visiting an action.
+	VisitActionPre(node *Action) error
+	// VisitActionPost is called after visiting an action.
+	VisitActionPost(node *Action) error
+}
+
 // Visitor visits syntax tree from root in depth-first order
 type Visitor struct {
 	passes []Pass
@@ -85,6 +93,36 @@ func (v *Visitor) Visit(n *Workflow) error {
 		v.reportElapsedTime("VisitWorkflowPost", t)
 	}
 
+	return nil
+}
+
+// VisitAction visits an action metadata syntax tree.
+func (v *Visitor) VisitAction(n *Action) error {
+	for _, pass := range v.passes {
+		p, ok := pass.(ActionPass)
+		if !ok {
+			continue
+		}
+		if err := p.VisitActionPre(n); err != nil {
+			return err
+		}
+	}
+	if runs, ok := n.Runs.(*CompositeActionRuns); ok {
+		for _, step := range runs.Steps {
+			if err := v.visitStep(step); err != nil {
+				return err
+			}
+		}
+	}
+	for _, pass := range v.passes {
+		p, ok := pass.(ActionPass)
+		if !ok {
+			continue
+		}
+		if err := p.VisitActionPost(n); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

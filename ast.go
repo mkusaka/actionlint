@@ -139,6 +139,8 @@ type WebhookEvent struct {
 	// Types is list of types of the webhook event. Only the types enumerated here will trigger
 	// the workflow.
 	Types []*String
+	// If is the condition evaluated before this event triggers the workflow.
+	If *String
 	// Branches is 'branches' filter. This value is nil when it is omitted.
 	Branches *WebhookEventFilter
 	// BranchesIgnore is 'branches-ignore' filter. This value is nil when it is omitted.
@@ -225,6 +227,8 @@ type DispatchInput struct {
 // WorkflowDispatchEvent is event on dispatching workflow manually.
 // https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
 type WorkflowDispatchEvent struct {
+	// If is the condition evaluated before this event triggers the workflow.
+	If *String
 	// Inputs is map from input names to input attributes. Keys are in lower case since they are case insensitive.
 	Inputs map[string]*DispatchInput
 	// Pos is a position in source.
@@ -239,6 +243,8 @@ func (e *WorkflowDispatchEvent) EventName() string {
 // RepositoryDispatchEvent is repository_dispatch event configuration.
 // https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
 type RepositoryDispatchEvent struct {
+	// If is the condition evaluated before this event triggers the workflow.
+	If *String
 	// Types is list of types which can trigger workflow.
 	Types []*String
 	// Pos is a position in source.
@@ -1005,6 +1011,88 @@ type Job struct {
 	Snapshot *Snapshot
 	// Pos is a position in source.
 	Pos *Pos
+}
+
+// ActionInput describes an input accepted by an action.
+// https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#inputs
+type ActionInput struct {
+	// Name is the input identifier.
+	Name *String
+	// Description describes the input.
+	Description *String
+	// Required declares whether the input is required.
+	Required *Bool
+	// Default is the optional default value.
+	Default *String
+	// DeprecationMessage warns users that the input is deprecated.
+	DeprecationMessage *String
+}
+
+// ActionOutput describes an output exposed by an action.
+// https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#outputs
+type ActionOutput struct {
+	// Name is the output identifier.
+	Name *String
+	// Description describes the output.
+	Description *String
+	// Value computes the output value. It is only valid for composite actions.
+	Value *String
+}
+
+// ActionBranding describes the optional GitHub Marketplace branding of an action.
+type ActionBranding struct {
+	// Icon is the icon name.
+	Icon *String
+	// Color is the icon background color.
+	Color *String
+}
+
+// ActionRuns is a way an action is executed.
+type ActionRuns interface {
+	actionRuns()
+}
+
+// JavaScriptActionRuns configures a JavaScript action.
+type JavaScriptActionRuns struct {
+	Using  *String
+	Main   *String
+	Pre    *String
+	PreIf  *String
+	Post   *String
+	PostIf *String
+}
+
+func (*JavaScriptActionRuns) actionRuns() {}
+
+// DockerActionRuns configures a Docker container action.
+type DockerActionRuns struct {
+	Image          *String
+	PreEntrypoint  *String
+	Entrypoint     *String
+	PostEntrypoint *String
+	Args           []*String
+	Env            *Env
+}
+
+func (*DockerActionRuns) actionRuns() {}
+
+// CompositeActionRuns configures a composite action.
+type CompositeActionRuns struct {
+	Steps []*Step
+}
+
+func (*CompositeActionRuns) actionRuns() {}
+
+// Action is the syntax tree for an action metadata file.
+// https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+type Action struct {
+	Name        *String
+	Description *String
+	Author      *String
+	Inputs      map[string]*ActionInput
+	Outputs     map[string]*ActionOutput
+	Runs        ActionRuns
+	Branding    *ActionBranding
 }
 
 // Workflow is root of workflow syntax tree, which represents one workflow configuration file.

@@ -1,3 +1,14 @@
+<a id="v0.0.3"></a>
+# [v0.0.3](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.3) - 2026-09-28
+
+- Lint action metadata directly, including composite steps and outputs; accept conditional event triggers and guard malformed metadata mappings. upstream PR/issue: 366, 357, 709, 277
+- Check parallel-step references, matrix scalar types and exclusions, workflow-run names, and event-name comparisons; detect identical caller/callee concurrency groups that can deadlock. upstream PR/issue: 695, 630, 634, 83, 68, 69, 538
+- Check potentially untrusted `workflow_run` properties and permissions requested by local reusable workflows. Offer an opt-in secrets allow-list. upstream PR/issue: 737, 332, 670, 552, 649, 609
+- Offer opt-in policies for required or pinned actions, exact action versions, job timeouts, explicit permissions, and wrapped `if:` expressions. upstream PR/issue: 474, 436, 738, 435, 524, 581, 49, 525, 728, 501
+- Accept newly documented runner labels; detect folded multi-line `run:` scripts and malformed expression prefixes; support adjacent `# yactionlint ignore=` directives. upstream PR/issue: 710, 723, 739, 441, 417, 375
+- Diagnose falsy literal true branches in `&&`/`||` expressions, redundant branch conditions when the only push trigger already selects that branch, and more statically resolvable runner-label expressions. upstream PR/issue: 440, 434, 656
+- Refresh generated popular-action metadata from current upstream action tags, including `actions/create-github-app-token@v3` and the distinct `@v3.0.0` input schema; drop the blocked `actions-cool/issues-helper` source from future generation. upstream PR/issue: 668, 652, 669, 648, 718
+
 <a id="v0.0.2"></a>
 # [v0.0.2](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.2) - 2026-09-28
 

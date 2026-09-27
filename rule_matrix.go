@@ -39,6 +39,7 @@ func (rule *RuleMatrix) VisitJobPre(n *Job) error {
 	//     - os: windows-latest
 	//       sh: pwsh
 
+	rule.checkInclude(m)
 	rule.checkExclude(m)
 	return nil
 }
@@ -134,12 +135,74 @@ func isYAMLValueSubset(v, sub RawYAMLValue) bool {
 	}
 }
 
-func (rule *RuleMatrix) checkExclude(m *Matrix) {
-	if m.Exclude == nil || len(m.Exclude.Combinations) == 0 || (m.Include != nil && m.Include.ContainsExpression()) {
+// checkInclude ensures values for existing matrix rows have a compatible YAML type (#630).
+
+func (rule *RuleMatrix) checkInclude(m *Matrix) {
+	if m.Include == nil || m.Include.Expression != nil {
 		return
 	}
 
-	if len(m.Rows) == 0 && (m.Include == nil || len(m.Include.Combinations) == 0) {
+	for _, c := range m.Include.Combinations {
+		if c.Expression != nil {
+			continue
+		}
+		for k, a := range c.Assigns {
+			row, ok := m.Rows[k]
+			if !ok || row.Expression != nil || containsDynamicMatrixValue(row.Values) || isDynamicMatrixValue(a.Value) {
+				continue
+			}
+			matches := false
+			for _, v := range row.Values {
+				if v.Kind() == a.Value.Kind() {
+					matches = true
+					break
+				}
+			}
+			if matches {
+				continue
+			}
+			rule.Errorf(
+				a.Value.Pos(),
+				"value %s in \"include\" has type %q which does not match any value in matrix %q",
+				a.Value.String(),
+				matrixValueTypeName(a.Value),
+				k,
+			)
+		}
+	}
+}
+
+func containsDynamicMatrixValue(values []RawYAMLValue) bool {
+	for _, v := range values {
+		if isDynamicMatrixValue(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func isDynamicMatrixValue(v RawYAMLValue) bool {
+	// An expression may determine its YAML type only at runtime.
+	s, ok := v.(*RawYAMLString)
+	return ok && ContainsExpression(s.Value)
+}
+
+func matrixValueTypeName(v RawYAMLValue) string {
+	switch v.Kind() {
+	case RawYAMLValueKindObject:
+		return "object"
+	case RawYAMLValueKindArray:
+		return "array"
+	default:
+		return "scalar"
+	}
+}
+
+func (rule *RuleMatrix) checkExclude(m *Matrix) {
+	if m.Exclude == nil || len(m.Exclude.Combinations) == 0 {
+		return
+	}
+	if len(m.Rows) == 0 {
 		rule.Error(m.Pos, "\"exclude\" section exists but no matrix variation exists")
 		return
 	}
@@ -155,26 +218,8 @@ func (rule *RuleMatrix) checkExclude(m *Matrix) {
 		rows[n] = r.Values
 	}
 
-	if m.Include != nil {
-		for _, c := range m.Include.Combinations {
-		Include:
-			for n, a := range c.Assigns {
-				if _, ok := ignored[n]; ok {
-					continue
-				}
-				row := rows[n]
-				for _, v := range row {
-					if v.Equals(a.Value) {
-						continue Include
-					}
-				}
-				rows[n] = append(row, a.Value)
-			}
-		}
-	}
-
 	for _, c := range m.Exclude.Combinations {
-	Exclude:
+	Assign:
 		for k, a := range c.Assigns {
 			if _, ok := ignored[k]; ok {
 				continue
@@ -196,7 +241,7 @@ func (rule *RuleMatrix) checkExclude(m *Matrix) {
 
 			for _, v := range row {
 				if isYAMLValueSubset(v, a.Value) {
-					continue Exclude
+					continue Assign
 				}
 			}
 

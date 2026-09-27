@@ -25,8 +25,14 @@ func (m *UntrustedInputMap) String() string {
 
 // Find child object property in this map
 func (m *UntrustedInputMap) findObjectProp(name string) (*UntrustedInputMap, bool) {
-	if m != nil && m.Children != nil {
-		if c, ok := m.Children[name]; ok {
+	if m == nil || m.Children == nil {
+		return nil, false
+	}
+	if c, ok := m.Children[name]; ok {
+		return c, true
+	}
+	if name != "*" {
+		if c, ok := m.Children["**"]; ok {
 			return c, true
 		}
 	}
@@ -134,6 +140,14 @@ var BuiltinUntrustedInputs = UntrustedInputSearchRoots{
 			NewUntrustedInputMap("discussion",
 				NewUntrustedInputMap("title"),
 				NewUntrustedInputMap("body"),
+			),
+			NewUntrustedInputMap("workflow_run",
+				NewUntrustedInputMap("head_branch"),
+				NewUntrustedInputMap("head_repository",
+					NewUntrustedInputMap("owner",
+						NewUntrustedInputMap("login"),
+					),
+				),
 			),
 		),
 		NewUntrustedInputMap("head_ref"),

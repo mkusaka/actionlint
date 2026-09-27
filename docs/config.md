@@ -28,6 +28,24 @@ config-variables:
   - JOB_NAME
   - ENVIRONMENT_STAGE
 
+# Optional allow-list. The built-in GITHUB_TOKEN is always available.
+config-secrets:
+  - DEPLOY_TOKEN
+
+# Optional policies; leave them unset to preserve the default checks.
+#required-actions:
+#  - action: actions/checkout
+#    version: v4
+#require-commit-hash: true
+#require-exact-action-version: true
+#require-explicit-if-expressions: true
+#require-permissions: true
+#require-explicit-permissions: true
+#timeout-minutes:
+#  required: true
+#  max: 60
+#assume-default-permissions: restricted
+
 # Path-specific configurations.
 paths:
   # Glob pattern relative to the repository root for matching files. The path separator is always '/'.
@@ -49,6 +67,24 @@ paths:
     is available.
 - `config-variables`: [Configuration variables][vars]. When an array is set, yactionlint will check `vars` properties strictly.
   An empty array means no variable is allowed. The default value `null` disables the check.
+- `config-secrets`: Optional allow-list for `secrets.NAME` references; `null` disables this check and `[]` rejects
+  all names except the built-in `GITHUB_TOKEN`. Name comparison is case-insensitive.
+- `required-actions`: Actions that each workflow must use. An `action` entry names `owner/repository[/path]`;
+  an optional `version` requires at least one matching `uses:` reference with that exact ref.
+- `require-commit-hash`: Require a 40-character commit SHA for repository action refs, including actions used
+  inside local composite actions. Local and Docker refs are excluded.
+- `require-exact-action-version`: Require a complete version tag such as `v4.1.2` or a 40-character commit SHA.
+  Major-only tags and branch names are rejected. Local and Docker refs are excluded.
+- `require-explicit-if-expressions`: Require `${{ ... }}` around job and step `if:` expressions.
+- `require-permissions`: Require a workflow-level `permissions:` declaration.
+- `require-explicit-permissions`: For workflows with more than one job, require `permissions: {}` at the
+  workflow level and an explicit `permissions:` declaration on every job. These policies are opt-in.
+- `timeout-minutes`: `required: true` requires each regular job to set a timeout. `max` rejects constant job
+  timeouts above the specified number of minutes; expressions cannot be compared statically. A maximum of
+  zero disables the limit.
+- `assume-default-permissions`: Controls how an otherwise undeclared caller token is modeled when checking
+  permissions requested by a local reusable workflow. `restricted` (default) assumes GitHub's restricted
+  defaults; `permissive` assumes write grants except `id-token`, which must always be granted explicitly.
 - `paths`: Configurations for specific file path patterns. This is a mapping from a glob pattern and the corresponding
   configuration.
   - `{glob}`: A file path glob pattern to apply the configuration. The path separator is always '/'. It is matched to the

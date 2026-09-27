@@ -1,0 +1,11 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
+        env:
+          TRUTHY: ${{ env.BOOL == 'true' && 'production-' || 'staging-' }}
+          DYNAMIC: ${{ env.BOOL == 'true' && env.PREFIX || 'staging-' }}
+          NESTED: ${{ env.BOOL == 'true' && (false || 'production-') || 'staging-' }}

@@ -17,13 +17,25 @@ When paths to YAML workflow files are given as arguments, yactionlint checks the
 yactionlint path/to/workflow1.yaml path/to/workflow2.yaml
 ```
 
-When `-` argument is given, yactionlint reads inputs from stdin and checks it as workflow source.
+When `-` is given, yactionlint reads YAML from stdin. Use `-stdin-filename` or `-input-format` to select action metadata:
 
 ```sh
 cat path/to/workflow.yaml | yactionlint -
 ```
 
 To know all flags and options, run `yactionlint -h`.
+
+### Lint action metadata
+
+`action.yml` and `action.yaml` are detected as action metadata outside `.github/workflows/`. Other filenames are
+treated as workflows. Override detection with `-input-format=action` or `-input-format=workflow`;
+`-input-format=auto-detect` is the default. Composite action steps, outputs, expressions, and metadata fields
+are checked.
+
+```sh
+yactionlint .github/actions/my-action/action.yml
+cat action.yml | yactionlint -input-format=action -
+```
 
 ### Ignore some errors
 
@@ -32,6 +44,19 @@ The regular expression syntax is the same as [RE2][re2].
 
 ```sh
 yactionlint -ignore 'label ".+" is unknown' -ignore '".+" is potentially untrusted'
+```
+
+For one diagnostic on the next YAML node, put a `# yactionlint ignore=` comment immediately above it. The value
+is one RE2 regular expression matched against the diagnostic message. Invalid or empty patterns are reported;
+comments inside `run: |` scripts are not directives.
+
+```yaml
+jobs:
+  lint:
+    # yactionlint ignore=label ".+" is unknown
+    runs-on: my-custom-runner
+    steps:
+      - run: echo ok
 ```
 
 `-shellcheck` and `-pyflakes` specifies file paths of executables. Setting empty string to them disables `shellcheck` and

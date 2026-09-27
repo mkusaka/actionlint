@@ -1,0 +1,6 @@
+test.yaml:14:21: value ["foo"] in "include" has type "array" which does not match any value in matrix "scalar" [matrix]
+test.yaml:15:20: value "foo" in "include" has type "scalar" which does not match any value in matrix "array" [matrix]
+test.yaml:16:21: value "foo" in "include" has type "scalar" which does not match any value in matrix "object" [matrix]
+test.yaml:21:21: value ["foo"] in "exclude" does not match in matrix "scalar" combinations. possible values are "foo" [matrix]
+test.yaml:22:20: value "foo" in "exclude" does not match in matrix "array" combinations. possible values are ["foo"] [matrix]
+test.yaml:23:21: value "foo" in "exclude" does not match in matrix "object" combinations. possible values are {"foo": "bar"} [matrix]

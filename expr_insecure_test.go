@@ -27,6 +27,8 @@ var testAllUntrustedInputs = []string{
 	"github.event.pull_request.head.repo.default_branch",
 	"github.event.discussion.title",
 	"github.event.discussion.body",
+	"github.event.workflow_run.head_branch",
+	"github.event.workflow_run.head_repository.owner.login",
 	"github.head_ref",
 }
 
@@ -54,9 +56,9 @@ func TestExprInsecureBuiltinUntrustedInputs(t *testing.T) {
 	rec = func(m map[string]*UntrustedInputMap, path []string) {
 		for k, v := range m {
 			p := append(path, k)
-			if k == "*" {
+			if k == "*" || k == "**" {
 				if len(m) != 1 {
-					t.Errorf("%v has * key but it also has other keys in %v", k, p)
+					t.Errorf("%v has wildcard key but it also has other keys in %v", k, p)
 				}
 			} else if !re.MatchString(k) {
 				t.Errorf("%v does not match to ^[a-z_]+$ in %v", k, p)
@@ -391,6 +393,13 @@ func TestExprInsecureCustomizedUntrustedInputMapping(t *testing.T) {
 			),
 			input: "github.foo.*",
 			want:  `"github.foo.*"`,
+		},
+		{
+			mapping: NewUntrustedInputMap("env",
+				NewUntrustedInputMap("**"),
+			),
+			input: "env.from_previous_step",
+			want:  `"env.**"`,
 		},
 		{
 			mapping: NewUntrustedInputMap("foo",

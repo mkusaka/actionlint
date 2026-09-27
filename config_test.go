@@ -56,6 +56,29 @@ func TestConfigParseSelfHostedRunnerOK(t *testing.T) {
 	}
 }
 
+func TestConfigParseActionPolicies(t *testing.T) {
+	c, err := ParseConfig([]byte(`
+require-commit-hash: true
+required-actions:
+  - action: actions/checkout
+    version: v4
+  - action: github/codeql-action/upload-sarif
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.RequireCommitHash {
+		t.Error("require-commit-hash was not parsed")
+	}
+	want := []RequiredActionRule{
+		{Action: "actions/checkout", Version: "v4"},
+		{Action: "github/codeql-action/upload-sarif"},
+	}
+	if diff := cmp.Diff(c.RequiredActions, want); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestConfigParseError(t *testing.T) {
 	tests := []struct {
 		in   string

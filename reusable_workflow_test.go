@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestReusableWorkflowUnmarshalOK(t *testing.T) {
@@ -52,6 +53,27 @@ func TestReusableWorkflowUnmarshalOK(t *testing.T) {
 				Inputs:  nil,
 				Outputs: nil,
 				Secrets: nil,
+			},
+		},
+		{
+			what: "scalar concurrency group",
+			src: `
+			on: workflow_call
+			concurrency: deployment
+			`,
+			want: &ReusableWorkflowMetadata{
+				ConcurrencyGroup: "deployment",
+			},
+		},
+		{
+			what: "expression concurrency group",
+			src: `
+			on: workflow_call
+			concurrency:
+			  group: ${{ github.workflow }}-${{ github.sha }}
+			`,
+			want: &ReusableWorkflowMetadata{
+				ConcurrencyGroup: "${{ github.workflow }}-${{ github.sha }}",
 			},
 		},
 		{
@@ -249,6 +271,41 @@ func TestReusableWorkflowUnmarshalOK(t *testing.T) {
 	}
 }
 
+func TestReusableWorkflowMetadataPermissions(t *testing.T) {
+	src := `
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  inherits:
+    runs-on: ubuntu-latest
+  empty:
+    runs-on: ubuntu-latest
+    permissions: {}
+  dynamic:
+    runs-on: ubuntu-latest
+    permissions: ${{ inputs.permissions }}
+  dynamic-scope:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: ${{ inputs.contents_permission }}
+`
+	m, err := parseReusableWorkflowMetadata([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]*ReusableWorkflowPermissions{
+		"inherits":      {Scopes: map[string]string{"contents": "read"}},
+		"empty":         {Scopes: map[string]string{}},
+		"dynamic":       {All: "${{ inputs.permissions }}", Dynamic: true},
+		"dynamic-scope": {Scopes: map[string]string{"contents": "${{ inputs.contents_permission }}"}},
+	}
+	if diff := cmp.Diff(want, m.JobPermissions); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestReusableWorkflowUnmarshalOnNodeNotFound(t *testing.T) {
 	src := "hello: world"
 	_, err := parseReusableWorkflowMetadata([]byte(src))
@@ -363,7 +420,7 @@ func TestReusableWorkflowCacheFindMetadataOK(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(m, testReusableWorkflowWantedMetadata); diff != "" {
+	if diff := cmp.Diff(m, testReusableWorkflowWantedMetadata, cmpopts.IgnoreFields(ReusableWorkflowMetadata{}, "JobPermissions")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -811,7 +868,7 @@ func TestReusableWorkflowMetadataCacheFindOneMetadataConcurrently(t *testing.T) 
 	}
 
 	for _, m := range ms {
-		if diff := cmp.Diff(testReusableWorkflowWantedMetadata, m); diff != "" {
+		if diff := cmp.Diff(testReusableWorkflowWantedMetadata, m, cmpopts.IgnoreFields(ReusableWorkflowMetadata{}, "JobPermissions")); diff != "" {
 			t.Fatal(diff)
 		}
 	}
@@ -946,7 +1003,7 @@ func TestReusableWorkflowCacheFindMetadataSharesEntryBetweenUsesForms(t *testing
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(written, testReusableWorkflowWantedMetadata); diff != "" {
+			if diff := cmp.Diff(written, testReusableWorkflowWantedMetadata, cmpopts.IgnoreFields(ReusableWorkflowMetadata{}, "JobPermissions")); diff != "" {
 				t.Fatal(diff)
 			}
 

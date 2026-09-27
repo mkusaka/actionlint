@@ -23,6 +23,26 @@ func TestRuleRunnerLabelCheckLabels(t *testing.T) {
 			labels: []string{"windows-latest"},
 		},
 		{
+			what:   "GH-hosted Windows 11 VS 2026 Arm runner label",
+			labels: []string{"windows-11-vs2026-arm"},
+		},
+		{
+			what:   "GH-hosted Ubuntu 26.04 runner label",
+			labels: []string{"ubuntu-26.04"},
+		},
+		{
+			what:   "GH-hosted Ubuntu 26.04 Arm runner label",
+			labels: []string{"ubuntu-26.04-arm"},
+		},
+		{
+			what:   "GH-hosted Xcode 27 runner label",
+			labels: []string{"xcode-27"},
+		},
+		{
+			what:   "GH-hosted Xcode 27 XLarge runner label",
+			labels: []string{"xcode-27-xlarge"},
+		},
+		{
 			what:   "simple GH-hosted macOS runner label",
 			labels: []string{"macos-14"},
 		},
@@ -119,14 +139,16 @@ func TestRuleRunnerLabelCheckLabels(t *testing.T) {
 			known:  []string{"foo", "bar"},
 		},
 		{
-			what:   "cannot check label: prefix",
+			what:   "matrix label with prefix",
 			labels: []string{"foo-${{matrix.os}}"},
 			matrix: []string{"ubuntu-latest"},
+			errs:   []string{`"foo-ubuntu-latest" is unknown`},
 		},
 		{
-			what:   "cannot check label: siffux",
+			what:   "matrix label with suffix",
 			labels: []string{"${{matrix.os}}-bar"},
 			matrix: []string{"ubuntu-latest"},
+			errs:   []string{`"ubuntu-latest-bar" is unknown`},
 		},
 		{
 			what:   "cannot check label: not a matrix",
@@ -149,9 +171,21 @@ func TestRuleRunnerLabelCheckLabels(t *testing.T) {
 			matrix: []string{"ubuntu-latest"},
 		},
 		{
-			what:   "give up checking matrix value containing expression",
+			what:   "give up checking dynamic matrix value with suffix",
+			labels: []string{"${{matrix.os}}-latest"},
+			matrix: []string{"macos", "${{env.OS}}"},
+		},
+		{
+			what:   "literal interpolation in matrix value",
 			labels: []string{"${{matrix.os}}"},
-			matrix: []string{"ubuntu-latest", "${{env.OS}}"},
+			matrix: []string{"macos-latest", "${{'linux'}}-latest"},
+			errs:   []string{`"linux-latest" is unknown`},
+		},
+		{
+			what:   "matrix label with latest suffix",
+			labels: []string{"${{matrix.os}}-latest"},
+			matrix: []string{"macos", "linux"},
+			errs:   []string{`"linux-latest" is unknown`},
 		},
 		{
 			what:   "use matrix value but no matrix exist",
@@ -169,6 +203,21 @@ func TestRuleRunnerLabelCheckLabels(t *testing.T) {
 			what:   "undefined label",
 			labels: []string{"linux-latest"},
 			errs:   []string{`"linux-latest" is unknown`},
+		},
+		{
+			what:   "undefined Windows 11 VS 2026 runner label",
+			labels: []string{"windows-11-vs2026"},
+			errs:   []string{`"windows-11-vs2026" is unknown`},
+		},
+		{
+			what:   "undefined Ubuntu 26.04 runner label",
+			labels: []string{"ubuntu-26.04-xlarge"},
+			errs:   []string{`"ubuntu-26.04-xlarge" is unknown`},
+		},
+		{
+			what:   "undefined Xcode 27 runner label",
+			labels: []string{"xcode-27-large"},
+			errs:   []string{`"xcode-27-large" is unknown`},
 		},
 		{
 			what:   "undefined self-hosted label",
@@ -267,6 +316,21 @@ func TestRuleRunnerLabelCheckLabels(t *testing.T) {
 			what:   "Windows labels architecture conflict",
 			labels: []string{"windows-2025", "windows-11-arm"},
 			errs:   []string{`label "windows-11-arm" conflicts with label "windows-2025"`},
+		},
+		{
+			what:   "Windows 11 Arm image labels conflict",
+			labels: []string{"windows-11-arm", "windows-11-vs2026-arm"},
+			errs:   []string{`label "windows-11-vs2026-arm" conflicts with label "windows-11-arm"`},
+		},
+		{
+			what:   "Ubuntu image labels version conflict",
+			labels: []string{"ubuntu-26.04", "ubuntu-24.04"},
+			errs:   []string{`label "ubuntu-24.04" conflicts with label "ubuntu-26.04"`},
+		},
+		{
+			what:   "Xcode 27 runner labels conflict",
+			labels: []string{"xcode-27", "xcode-27-xlarge"},
+			errs:   []string{`label "xcode-27-xlarge" conflicts with label "xcode-27"`},
 		},
 		{
 			what:   "macOS XL and normal labels conflict",

@@ -2,6 +2,7 @@ package actionlint
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -11,6 +12,7 @@ type RuleWorkflowCall struct {
 	workflowCallEventPos *Pos
 	workflowPath         string
 	cache                *LocalReusableWorkflowCache
+	workflow             *Workflow
 }
 
 // NewRuleWorkflowCall creates a new RuleWorkflowCall instance. 'workflowPath' is a file path to
@@ -29,12 +31,13 @@ func NewRuleWorkflowCall(workflowPath string, cache *LocalReusableWorkflowCache)
 
 // VisitWorkflowPre is callback when visiting Workflow node before visiting its children.
 func (rule *RuleWorkflowCall) VisitWorkflowPre(n *Workflow) error {
+	rule.workflow = n
 	for _, e := range n.On {
 		if e, ok := e.(*WorkflowCallEvent); ok {
 			rule.workflowCallEventPos = e.Pos
 			// Register this reusable workflow in cache so that it does not need to parse this workflow
 			// file again when this workflow is called by other workflows.
-			rule.cache.WriteWorkflowCallEvent(rule.workflowPath, e)
+			rule.cache.WriteWorkflowCallEventFromWorkflow(rule.workflowPath, e, n)
 			break
 		}
 	}
@@ -53,7 +56,7 @@ func (rule *RuleWorkflowCall) VisitJobPre(n *Job) error {
 	}
 
 	if isWorkflowCallUsesLocalFormat(u.Value) {
-		rule.checkWorkflowCallUsesLocal(n.WorkflowCall)
+		rule.checkWorkflowCallUsesLocal(n, n.WorkflowCall)
 		return nil
 	}
 
@@ -76,7 +79,7 @@ func (rule *RuleWorkflowCall) VisitJobPre(n *Job) error {
 	return nil
 }
 
-func (rule *RuleWorkflowCall) checkWorkflowCallUsesLocal(call *WorkflowCall) {
+func (rule *RuleWorkflowCall) checkWorkflowCallUsesLocal(caller *Job, call *WorkflowCall) {
 	u := call.Uses
 	m, err := rule.cache.FindMetadata(u.Value)
 	if err != nil {
@@ -87,6 +90,8 @@ func (rule *RuleWorkflowCall) checkWorkflowCallUsesLocal(call *WorkflowCall) {
 		rule.Debug("Skip workflow call %q since no metadata was found", u.Value)
 		return
 	}
+
+	rule.checkWorkflowCallConcurrency(call, m)
 
 	// Validate inputs
 	for n, i := range m.Inputs {
@@ -142,10 +147,189 @@ func (rule *RuleWorkflowCall) checkWorkflowCallUsesLocal(call *WorkflowCall) {
 		}
 	}
 
+	rule.checkWorkflowCallPermissions(caller, call, m)
+
 	rule.Debug("Validated reusable workflow %q", u.Value)
 }
 
-// Parse ./{path}/{filename} or $/{path}/{filename}
+func (rule *RuleWorkflowCall) checkWorkflowCallConcurrency(call *WorkflowCall, metadata *ReusableWorkflowMetadata) {
+	if rule.workflow == nil || rule.workflow.Concurrency == nil || rule.workflow.Concurrency.Group == nil {
+		return
+	}
+	group := rule.workflow.Concurrency.Group
+	if !workflowConcurrencyGroupsCanDeadlock(group.Value, metadata.ConcurrencyGroup) {
+		return
+	}
+	rule.Errorf(
+		group.Pos,
+		"workflow concurrency group %q is also used by locally called reusable workflow %q and may cause a deadlock",
+		group.Value,
+		call.Uses.Value,
+	)
+}
+
+func workflowConcurrencyGroupsCanDeadlock(caller, callee string) bool {
+	if caller == "" || caller != callee {
+		return false
+	}
+	if !ContainsExpression(caller) {
+		return true
+	}
+	for {
+		start := strings.Index(caller, "${{")
+		if start < 0 {
+			return true
+		}
+		src := caller[start+3:]
+		lexer := NewExprLexer(src)
+		expr, err := NewExprParser().Parse(lexer)
+		if err != nil || !workflowConcurrencyExpressionUsesSharedContexts(expr) {
+			return false
+		}
+		offset := lexer.Offset()
+		if offset == 0 || offset > len(src) {
+			return false
+		}
+		caller = src[offset:]
+	}
+}
+
+func workflowConcurrencyExpressionUsesSharedContexts(expr ExprNode) bool {
+	shared := true
+	VisitExprNode(expr, func(node, _ ExprNode, entering bool) {
+		if !entering || !shared {
+			return
+		}
+		switch n := node.(type) {
+		case *VariableNode:
+			shared = n.Name == "github"
+		case *ObjectDerefNode:
+			if receiver, ok := n.Receiver.(*VariableNode); ok && receiver.Name == "github" {
+				shared = sharedGitHubConcurrencyContext(n.Property)
+			}
+		case *IndexAccessNode:
+			if workflowConcurrencyExpressionRoot(n.Operand) == "github" {
+				shared = false
+			}
+		case *FuncCallNode:
+			shared = false
+		}
+	})
+	return shared
+}
+
+func sharedGitHubConcurrencyContext(property string) bool {
+	switch property {
+	case "actor", "actor_id", "base_ref", "event", "event_name", "head_ref", "ref", "ref_name", "ref_type", "repository", "repository_id", "repository_owner", "repository_owner_id", "run_attempt", "run_id", "run_number", "sha", "workflow":
+		return true
+	default:
+		return false
+	}
+}
+
+func workflowConcurrencyExpressionRoot(expr ExprNode) string {
+	switch n := expr.(type) {
+	case *VariableNode:
+		return n.Name
+	case *ObjectDerefNode:
+		return workflowConcurrencyExpressionRoot(n.Receiver)
+	case *ArrayDerefNode:
+		return workflowConcurrencyExpressionRoot(n.Receiver)
+	case *IndexAccessNode:
+		return workflowConcurrencyExpressionRoot(n.Operand)
+	default:
+		return ""
+	}
+}
+
+// checkWorkflowCallPermissions compares declared callee requirements with the caller's grant.
+func (rule *RuleWorkflowCall) checkWorkflowCallPermissions(caller *Job, call *WorkflowCall, metadata *ReusableWorkflowMetadata) {
+	if len(metadata.JobPermissions) == 0 {
+		return
+	}
+
+	var callerPermissions *ReusableWorkflowPermissions
+	if caller.Permissions != nil {
+		callerPermissions = convertASTPermissions(caller.Permissions)
+	} else if rule.workflow != nil {
+		callerPermissions = convertASTPermissions(rule.workflow.Permissions)
+	}
+
+	mode := AssumeDefaultPermissionsRestricted
+	if config := rule.Config(); config != nil && config.AssumeDefaultPermissions != nil {
+		mode = *config.AssumeDefaultPermissions
+	}
+	callerLevel := func(scope string) (int, bool) {
+		if callerPermissions == nil {
+			return defaultPermissionLevel(mode, scope), true
+		}
+		return explicitPermissionLevel(callerPermissions, scope)
+	}
+
+	jobs := make([]string, 0, len(metadata.JobPermissions))
+	for job := range metadata.JobPermissions {
+		jobs = append(jobs, job)
+	}
+	slices.Sort(jobs)
+
+	for _, job := range jobs {
+		required := requiredPermissionLevels(metadata.JobPermissions[job])
+		scopes := make([]string, 0, len(required))
+		for scope := range required {
+			scopes = append(scopes, scope)
+		}
+		slices.Sort(scopes)
+		for _, scope := range scopes {
+			requiredLevel := required[scope]
+			grantedLevel, known := callerLevel(scope)
+			if known && grantedLevel < requiredLevel {
+				rule.Errorf(
+					call.Uses.Pos,
+					"nested job %q of %q requires %q but the calling job grants %q",
+					job,
+					call.Uses.Value,
+					scope+": "+permissionLevelName(requiredLevel),
+					scope+": "+permissionLevelName(grantedLevel),
+				)
+			}
+		}
+	}
+}
+
+func requiredPermissionLevels(permissions *ReusableWorkflowPermissions) map[string]int {
+	required := map[string]int{}
+	if permissions == nil || permissions.Dynamic {
+		return required
+	}
+	if permissions.All != "" {
+		if ContainsExpression(permissions.All) {
+			return required
+		}
+		level := permissionNone
+		switch permissions.All {
+		case "read-all":
+			level = permissionRead
+		case "write-all":
+			level = permissionWrite
+		}
+		for scope := range allPermissionScopes {
+			if level := clampPermissionLevel(scope, level); level > permissionNone {
+				required[scope] = level
+			}
+		}
+		return required
+	}
+	for scope, value := range permissions.Scopes {
+		if ContainsExpression(value) {
+			continue
+		}
+		if level := clampPermissionLevel(scope, permissionLevel(value)); level > permissionNone {
+			required[scope] = level
+		}
+	}
+	return required
+}
+
 // https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#calling-a-reusable-workflow
 func isWorkflowCallUsesLocalFormat(u string) bool {
 	u, ok := canonLocalUsesSpec(u)

@@ -51,6 +51,11 @@ with Go template syntax.
 
 ## FLAGS
 
+  * `-action-metadata-cache-dir` <PATH>:
+    Persistent cache directory for fetched action metadata (default: the user's cache directory
+    under `yactionlint/action-metadata`). Immutable commit refs do not expire; other refs expire
+    after 24 hours.
+
   * `-color`:
     Always enable colorful output. This is useful to force colorful outputs
 
@@ -59,6 +64,10 @@ with Go template syntax.
 
   * `-debug`:
     Enable debug output (for development)
+
+  * `-fetch-action-metadata`:
+    Fetch remote GitHub actions at each exact `uses:` ref and check their input and output schemas.
+    Disabled by default; `GITHUB_TOKEN` enables authenticated GitHub contents API requests.
 
   * `-format` <FORMAT>:
     Custom template to format error messages in Go template syntax. See the usage documentation

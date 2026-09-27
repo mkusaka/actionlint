@@ -1,5 +1,8 @@
-# Unreleased
+<a id="v0.0.4"></a>
+# [v0.0.4](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.4) - 2026-09-28
 
+- Add opt-in exact-ref GitHub action metadata checks for remote input/output schemas. Fetch distinct actions concurrently, deduplicate requests, support `GITHUB_TOKEN` for authenticated requests, and persist fetched YAML in a configurable cache directory.
+- Accept `cache-mode` at workflow and job scope, including reusable-workflow calls; report retired Node 20 runtimes in JavaScript action metadata on github.com.
 - Publish the fork's own WebAssembly playground from `main` on GitHub Pages, including workflow and action metadata modes. Replace the README link to upstream's different linter.
 
 <a id="v0.0.3"></a>

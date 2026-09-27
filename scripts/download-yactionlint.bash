@@ -16,7 +16,7 @@ function usage() {
     echo >&2
     echo 'VERSION:' >&2
     echo '   Version of yactionlint to download. Version must be a specific version' >&2
-    echo '   "{major}.{minor}.{patch}" such as "0.0.3" or "latest". When "latest" is' >&2
+    echo '   "{major}.{minor}.{patch}" such as "0.0.4" or "latest". When "latest" is' >&2
     echo '   specified or this argument is omitted, the latest version will be selected.' >&2
     echo >&2
     echo 'EXAMPLE:' >&2
@@ -28,13 +28,13 @@ function usage() {
     echo >&2
     echo '      $ bash download-yactionlint.bash latest /usr/bin' >&2
     echo >&2
-    echo '  - Download version 0.0.3 to the current directory' >&2
+    echo '  - Download version 0.0.4 to the current directory' >&2
     echo >&2
-    echo '      $ bash download-yactionlint.bash 0.0.3' >&2
+    echo '      $ bash download-yactionlint.bash 0.0.4' >&2
     echo >&2
-    echo '  - Download version 0.0.3 to /usr/bin' >&2
+    echo '  - Download version 0.0.4 to /usr/bin' >&2
     echo >&2
-    echo '      $ bash download-yactionlint.bash 0.0.3 /usr/bin' >&2
+    echo '      $ bash download-yactionlint.bash 0.0.4 /usr/bin' >&2
 }
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
@@ -43,7 +43,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 # Default value is updated manually on release
-version="0.0.3"
+version="0.0.4"
 if [ -n "$1" ]; then
     if [[ "$1" != 'latest' && "$1" != 'LATEST' ]]; then
         if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then

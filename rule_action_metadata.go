@@ -18,6 +18,9 @@ func (rule *RuleActionMetadata) VisitActionPre(action *Action) error {
 		rule.checkBranding(action.Branding)
 	}
 	if runs, ok := action.Runs.(*JavaScriptActionRuns); ok {
+		if runs.Using != nil && runs.Using.Value == "node20" {
+			rule.Errorf(runs.Using.Pos, "node20 is no longer available on github.com runners; publish this JavaScript action with runs.using: node24")
+		}
 		if runs.PreIf != nil && runs.Pre == nil {
 			rule.Errorf(runs.PreIf.Pos, "\"pre\" is required when \"pre-if\" is specified in \"runs\" section")
 		}

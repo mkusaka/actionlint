@@ -1514,6 +1514,20 @@ func (p *parser) parseSnapshot(pos *Pos, n *yaml.Node) *Snapshot {
 	}
 }
 
+// https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#cache-mode
+func (p *parser) parseCacheMode(n *yaml.Node) *String {
+	if !p.checkString(n, false) {
+		return nil
+	}
+	switch n.Value {
+	case "read", "write", "write-only", "none":
+		return newString(n)
+	default:
+		p.errorf(n, "invalid cache-mode %q. expected \"read\", \"write\", \"write-only\", or \"none\"", n.Value)
+		return nil
+	}
+}
+
 // https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_id
 func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 	ret := &Job{ID: id, Pos: id.Pos}
@@ -1530,6 +1544,7 @@ func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 	//   - jobs.<job_id>.needs
 	//   - jobs.<job_id>.if
 	//   - jobs.<job_id>.permissions
+	//   - jobs.<job_id>.cache-mode
 
 	// https://docs.github.com/en/actions/using-workflows/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
 	var stepsOnlyKey *String
@@ -1553,6 +1568,8 @@ func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 			stepsOnlyKey = k
 		case "permissions":
 			ret.Permissions = p.parsePermissions(k.Pos, v)
+		case "cache-mode":
+			ret.CacheMode = p.parseCacheMode(v)
 		case "environment":
 			ret.Environment = p.parseEnvironment(k.Pos, v)
 			stepsOnlyKey = k
@@ -1624,6 +1641,7 @@ func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 				"needs",
 				"runs-on",
 				"permissions",
+				"cache-mode",
 				"environment",
 				"concurrency",
 				"outputs",
@@ -1648,7 +1666,7 @@ func (p *parser) parseJob(id *String, n *yaml.Node) *Job {
 		if stepsOnlyKey != nil {
 			p.errorfAt(
 				stepsOnlyKey.Pos,
-				"when a reusable workflow is called with \"uses\", %q is not available. only following keys are allowed: \"name\", \"uses\", \"with\", \"secrets\", \"needs\", \"if\", and \"permissions\" in job %q",
+				"when a reusable workflow is called with \"uses\", %q is not available. only following keys are allowed: \"name\", \"uses\", \"with\", \"secrets\", \"needs\", \"if\", \"permissions\", and \"cache-mode\" in job %q",
 				stepsOnlyKey.Value,
 				id.Value,
 			)
@@ -1913,6 +1931,8 @@ func (p *parser) parseWorkflow(n *yaml.Node) *Workflow {
 			w.On = p.parseEvents(v)
 		case "permissions":
 			w.Permissions = p.parsePermissions(k.Pos, v)
+		case "cache-mode":
+			w.CacheMode = p.parseCacheMode(v)
 		case "env":
 			w.Env = p.parseEnv(v)
 		case "defaults":
@@ -1929,6 +1949,7 @@ func (p *parser) parseWorkflow(n *yaml.Node) *Workflow {
 				"run-name",
 				"on",
 				"permissions",
+				"cache-mode",
 				"env",
 				"defaults",
 				"concurrency",

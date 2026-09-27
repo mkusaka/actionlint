@@ -73,6 +73,14 @@ These checks are not necessarily available in the external upstream playground:
   `run: |` instead. A spaced expression prefix such as `$ {{ vars.NAME }}` is also reported.
 - Action metadata can be checked directly, including composite action steps, output expressions,
   branding, and the unsupported `timeout-minutes` key in composite steps.
+- The documented [`cache-mode`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#cache-mode)
+  key accepts `read`, `write`, `write-only`, and `none` at workflow and job scope (including reusable-workflow calls).
+  GitHub warns that `write`/`write-only` on low-trust triggers can bypass its read-only default;
+  this check validates syntax, not whether the chosen access mode is safe for a particular trigger.
+- On github.com, [JavaScript actions with `runs.using: node20` are retired](https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/); directly linted metadata,
+  local action references, and remotely fetched action versions report them. GHES availability may differ.
+- With [`-fetch-action-metadata`](usage.md#validate-remote-action-versions), repository action inputs and
+  step outputs are checked against the metadata at their exact `uses:` ref rather than a major-version snapshot.
 
 Note that yactionlint focuses on catching mistakes in workflows and action metadata. For general YAML style checks,
 consider [yamllint][]. The example `Playground` links below still open the external upstream actionlint site;
@@ -1906,15 +1914,14 @@ actionlint checks inputs of many popular actions such as `actions/checkout@v4`. 
 - some input is required by the action but it is not set at `with:`
 - input set at `with:` is not defined in the action (this commonly occurs by a typo)
 
-this is done by checking `with:` section items with a small database collected at building `actionlint` binary. actionlint
-can check popular actions without fetching any `action.yml` of the actions from the remote so that it can run efficiently.
+By default, yactionlint checks `with:` items using a bundled database of popular action metadata,
+without fetching `action.yml` from the network. It checks whether required inputs are missing
+or supplied inputs are unknown. The bundled data primarily covers major-version references such
+as `actions/checkout@v4`; exact patch versions and arbitrary refs may not be included.
 
-Note that it only supports the case of specifying major versions like `actions/checkout@v4`. Fixing version of action like
-`actions/checkout@v4.0.1` and using the HEAD of action like `actions/checkout@main` are not supported for now.
-
-So far, actionlint supports more than 100 popular actions The data set is embedded at [`popular_actions.go`](../popular_actions.go)
-and were automatically collected by [a script][generate-popular-actions]. If you want more checks for other actions, please
-make a request [as an issue][issue-form].
+Use [`-fetch-action-metadata`](usage.md#validate-remote-action-versions) in the CLI to check the
+metadata at each action's exact `uses:` ref, including actions absent from the bundled database.
+Metadata fetch failures are reported rather than silently falling back to a different version.
 
 <a id="detect-outdated-popular-actions"></a>
 ## Outdated popular actions detection at `uses:`

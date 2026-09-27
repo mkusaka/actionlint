@@ -19,6 +19,8 @@ Followings are unexhaustive list of interesting APIs.
   until the end and returns exit status.
 - `Linter` manages linter lifecycle and applies checks to given files. If you want to run yactionlint checks in your
   program, please use this struct.
+  `LinterOptions.FetchActionMetadata` opts in to exact-ref remote action metadata checks;
+  `ActionMetadataCacheDir` selects persistent storage, and `GITHUB_TOKEN` enables authenticated requests.
 - `Project` and `Projects` detect a project (Git repository) in a given directory path and find configuration in it.
 - `Config` represents structure of `yactionlint.yaml` config file. It can be decoded by [yaml/go-yaml][go-yaml] library.
 - `Workflow`, `Job`, `Step`, ... are nodes of workflow syntax tree. `Workflow` is a root node.
@@ -42,6 +44,9 @@ Followings are unexhaustive list of interesting APIs.
 - `ActionMetadata` is a struct for action metadata file (`action.yml`). It is used to check inputs specified at `with:`
   and typing `steps.{id}.outputs` object strictly.
 - `PopularActions` global variable is the data set of popular actions' metadata collected by [the script](../scripts/generate-popular-actions).
+- `RemoteActionsCache.FindMetadata(spec)` fetches repository action metadata at an exact ref with
+  concurrent-request deduplication and persistent caching. `NewRemoteActionsCache` accepts an HTTP
+  client, concurrency limit, cache directory, and optional GitHub token.
 - `AllWebhookTypes` global variable is the mapping from all webhook names to their types collected by [the script](../scripts/generate-webhook-events).
 - `WorkflowKeyAvailability()` returns available context names and special function names for the given workflow key like
   `jobs.<job_id>.outputs.<output_id>`. This function uses the data collected by [the script](../scripts/generate-availability).

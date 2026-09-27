@@ -302,7 +302,8 @@ func isImageOnDockerRegistry(image string) bool {
 // https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsuses
 type RuleAction struct {
 	RuleBase
-	cache *LocalActionsCache
+	cache  *LocalActionsCache
+	remote *RemoteActionsCache
 }
 
 // NewRuleAction creates new RuleAction instance.
@@ -372,10 +373,27 @@ func (rule *RuleAction) checkRepoAction(spec string, exec *ExecAction) {
 
 	if owner == "" || repo == "" || ref == "" {
 		rule.invalidActionFormat(exec.Uses.Pos, spec, "owner and repo and ref should not be empty")
+		return
 	}
 
 	if owner != "" && repo != "" && ref != "" && rule.config != nil && rule.config.RequireCommitHash && !reCommitHash.MatchString(ref) {
 		rule.Errorf(exec.Uses.Pos, "action %q must be pinned to a full-length commit SHA", spec)
+	}
+
+	if rule.remote != nil {
+		meta, err := rule.remote.FindMetadata(spec)
+		if err != nil {
+			rule.Error(exec.Uses.Pos, err.Error())
+			return
+		}
+		if meta.Runs.Using == "node20" {
+			rule.Errorf(exec.Uses.Pos, "action %q uses node20, which is no longer available on github.com runners; use an action version with runs.using: node24", spec)
+		}
+		if known, ok := PopularActions[spec]; ok && known.SkipInputs {
+			return // This action accepts inputs not declared in its metadata.
+		}
+		rule.checkAction(meta, exec, func(*ActionMetadata) string { return strconv.Quote(spec) })
+		return
 	}
 
 	meta, ok := PopularActions[spec]
@@ -505,7 +523,10 @@ func (rule *RuleAction) checkLocalActionRuns(meta *ActionMetadata, pos *Pos) {
 		rule.checkLocalDockerActionRuns(r, meta.Dir(), meta.Name, pos)
 	case "composite":
 		rule.checkLocalCompositeActionRuns(r, meta.Dir(), meta.Name, pos)
-	case "node20", "node24":
+	case "node20":
+		rule.Errorf(pos, "local action %q uses node20, which is no longer available on github.com runners; publish this action with runs.using: node24", meta.Name)
+		rule.checkLocalJavaScriptActionRuns(r, meta.Dir(), meta.Name, pos)
+	case "node24":
 		rule.checkLocalJavaScriptActionRuns(r, meta.Dir(), meta.Name, pos)
 	default:
 		rule.Errorf(pos, `invalid runner name %q at runs.using in %q action defined at %q. valid runners are "composite", "docker", "node20", and "node24". see https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#runs`, r.Using, meta.Name, meta.Dir())

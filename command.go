@@ -148,6 +148,8 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&ver, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&opts.StdinFileName, "stdin-filename", "<stdin>", "File name when reading input from stdin")
 	flags.StringVar(&inputFormat, "input-format", "auto-detect", "Input syntax: workflow, action, or auto-detect")
+	flags.BoolVar(&opts.FetchActionMetadata, "fetch-action-metadata", false, "Fetch GitHub action.yml/action.yaml at each uses: ref to check exact-version inputs and outputs (requires network; GITHUB_TOKEN enables authenticated requests)")
+	flags.StringVar(&opts.ActionMetadataCacheDir, "action-metadata-cache-dir", "", "Directory for fetched action metadata (default: user cache directory/yactionlint/action-metadata)")
 	flags.Usage = func() {
 		printUsageHeader(cmd.Stderr)
 		flags.PrintDefaults()

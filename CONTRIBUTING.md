@@ -149,12 +149,12 @@ make fuzz FUZZ_FUNC=FuzzParse
 
 ## Make a new release
 
-For a fork release such as v0.0.4:
+For a fork release such as v0.0.5:
 
 1. Update [CHANGELOG.md](./CHANGELOG.md) with the changes in this fork and commit them on `main`.
-2. Run `bash ./scripts/bump-version.bash 0.0.4` to update the download script, commit, tag, and push.
+2. Run `bash ./scripts/bump-version.bash 0.0.5` to update the download script, commit, tag, and push.
 3. If the tag push does not start [the release workflow](.github/workflows/release.yaml), run
-   `gh workflow run release.yaml --ref v0.0.4`.
+   `gh workflow run release.yaml --ref v0.0.5`.
 4. Check that the workflow publishes the yactionlint binaries and downloads one using `scripts/download-yactionlint.bash`.
 
 ## How to generate the manual

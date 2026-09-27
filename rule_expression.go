@@ -29,6 +29,7 @@ type RuleExpression struct {
 	workflow         *Workflow
 	localActions     *LocalActionsCache
 	localWorkflows   *LocalReusableWorkflowCache
+	remote           *RemoteActionsCache
 }
 
 // NewRuleExpression creates new RuleExpression instance.
@@ -379,6 +380,9 @@ func (rule *RuleExpression) getActionOutputsType(spec *String) *ObjectType {
 	if spec == nil {
 		return NewMapObjectType(StringType{})
 	}
+	if spec.ContainsExpression() {
+		return NewMapObjectType(StringType{})
+	}
 
 	if _, ok := canonLocalUsesSpec(spec.Value); ok {
 		meta, _, err := rule.localActions.FindMetadata(spec.Value)
@@ -397,6 +401,16 @@ func (rule *RuleExpression) getActionOutputsType(spec *String) *ObjectType {
 	// So any `outputs.*` properties should be accepted (#104)
 	if strings.HasPrefix(spec.Value, "actions/github-script@") {
 		return NewEmptyObjectType()
+	}
+	if rule.remote != nil {
+		if known, ok := PopularActions[spec.Value]; ok && known.SkipOutputs {
+			return NewEmptyObjectType()
+		}
+		meta, err := rule.remote.FindMetadata(spec.Value)
+		if err != nil {
+			return NewMapObjectType(StringType{}) // RuleAction reports the fetch error at uses:.
+		}
+		return typeOfActionOutputs(meta)
 	}
 
 	// When the action run at this step is a popular action, we know what outputs are set by it.

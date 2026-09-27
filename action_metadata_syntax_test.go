@@ -109,7 +109,7 @@ func TestRuleActionMetadataChecksInvalidFields(t *testing.T) {
 	source := []byte(`name: Test action
 description: Tests action metadata validation
 runs:
-  using: node20
+  using: node24
   main: index.js
   pre-if: always()
 branding:

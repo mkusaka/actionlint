@@ -88,7 +88,7 @@ Install `yactionlint` with `go install` or download [this fork's release binarie
 [the installation document][install] for details.
 
 ```sh
-go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.3
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.4
 ```
 
 Basically all you need to do is run the `yactionlint` command in your repository. yactionlint automatically detects workflows and
@@ -101,6 +101,10 @@ yactionlint
 
 The [playground][playground] runs this fork's WebAssembly build in your browser. Select **Action metadata** to check
 `action.yml` files; repository-dependent checks and external shellcheck/pyflakes integrations require the CLI.
+
+For version-specific remote action input and output checks, run `yactionlint -fetch-action-metadata`.
+Set `GITHUB_TOKEN` for authenticated GitHub requests, and optionally select persistent storage with
+`-action-metadata-cache-dir`. The default stays offline.
 
 See [the usage document][usage] for more details.
 

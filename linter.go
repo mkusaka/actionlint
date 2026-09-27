@@ -85,6 +85,12 @@ type LinterOptions struct {
 	StdinFileName string
 	// InputFormat selects workflow syntax, action metadata syntax, or filename-based detection.
 	InputFormat InputFormat
+	// FetchActionMetadata checks repository actions against action.yml/action.yaml at their exact refs.
+	// It accesses GitHub over the network; the default uses the bundled popular actions data only.
+	FetchActionMetadata bool
+	// ActionMetadataCacheDir overrides the on-disk cache directory for fetched metadata.
+	// The default is the user's cache directory under yactionlint/action-metadata.
+	ActionMetadataCacheDir string
 	// WorkingDir is a file path to the current working directory. When this value is empty, os.Getwd
 	// will be used to get a working directory.
 	WorkingDir string
@@ -112,6 +118,7 @@ type Linter struct {
 	cwd            string
 	onRulesCreated func([]Rule) []Rule
 	inputFormat    InputFormat
+	remoteActions  *RemoteActionsCache
 }
 
 // NewLinter creates a new Linter instance.
@@ -182,6 +189,19 @@ func NewLinter(out io.Writer, opts *LinterOptions) (*Linter, error) {
 		stdin = opts.StdinFileName
 	}
 
+	var remoteActions *RemoteActionsCache
+	if opts.FetchActionMetadata {
+		cacheDir := opts.ActionMetadataCacheDir
+		if cacheDir == "" {
+			userCacheDir, err := os.UserCacheDir()
+			if err != nil {
+				return nil, fmt.Errorf("could not locate action metadata cache directory: %w", err)
+			}
+			cacheDir = filepath.Join(userCacheDir, "yactionlint", "action-metadata")
+		}
+		remoteActions = NewRemoteActionsCache(nil, 8, cacheDir, os.Getenv("GITHUB_TOKEN"))
+	}
+
 	l := &Linter{
 		NewProjects(),
 		out,
@@ -197,6 +217,7 @@ func NewLinter(out io.Writer, opts *LinterOptions) (*Linter, error) {
 		cwd,
 		opts.OnRulesCreated,
 		opts.InputFormat,
+		remoteActions,
 	}
 
 	l.debug("Create a Linter instance with option %#v", opts)
@@ -562,6 +583,11 @@ func (l *Linter) check(
 
 	if w != nil || action != nil {
 		dbg := l.debugWriter()
+		prefetchRemoteActions(w, action, l.remoteActions)
+		actionRule := NewRuleAction(localActions)
+		actionRule.remote = l.remoteActions
+		expressionRule := NewRuleExpression(localActions, localReusableWorkflows)
+		expressionRule.remote = l.remoteActions
 
 		var rules []Rule
 		if w != nil {
@@ -575,7 +601,7 @@ func (l *Linter) check(
 				NewRuleEventCondition(),
 				NewRuleJobNeeds(),
 				NewRuleParallelSteps(),
-				NewRuleAction(localActions),
+				actionRule,
 				NewRuleActionVersion(),
 				NewRuleRequiredActions(),
 				NewRuleEnvVar(),
@@ -585,7 +611,7 @@ func (l *Linter) check(
 				NewRuleExplicitPermissions(),
 				NewRuleWorkflowRunNames(workflowNames, path),
 				NewRuleWorkflowCall(path, localReusableWorkflows),
-				NewRuleExpression(localActions, localReusableWorkflows),
+				expressionRule,
 				NewRuleDeprecatedCommands(),
 				NewRuleIfCond(),
 				NewRuleExplicitIfExpressions(),
@@ -593,9 +619,9 @@ func (l *Linter) check(
 		} else {
 			rules = []Rule{
 				NewRuleActionMetadata(),
-				NewRuleAction(localActions),
+				actionRule,
 				NewRuleActionVersion(),
-				NewRuleExpression(localActions, localReusableWorkflows),
+				expressionRule,
 				NewRuleID(),
 				NewRuleEnvVar(),
 				NewRuleShellName(),

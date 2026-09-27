@@ -975,6 +975,8 @@ type Job struct {
 	Environment *Environment
 	// Concurrency is concurrency configuration on running the job.
 	Concurrency *Concurrency
+	// CacheMode controls whether this job can restore or save GitHub Actions caches.
+	CacheMode *String
 	// Outputs is map from output name to output specifications.
 	// https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idoutputs
 	Outputs map[string]*Output
@@ -1109,6 +1111,8 @@ type Workflow struct {
 	On []Event
 	// Permissions is configuration of permissions of this workflow.
 	Permissions *Permissions
+	// CacheMode sets the default cache access mode for jobs in this workflow.
+	CacheMode *String
 	// Env is a default set of environment variables while running this workflow.
 	// https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#env
 	Env *Env

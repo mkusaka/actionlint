@@ -37,6 +37,29 @@ yactionlint .github/actions/my-action/action.yml
 cat action.yml | yactionlint -input-format=action -
 ```
 
+### Validate remote action versions
+
+By default, yactionlint stays offline and checks inputs and outputs using its bundled popular-action
+metadata. The CLI option `-fetch-action-metadata` additionally downloads `action.yaml` (or `action.yml`)
+from each static GitHub repository action at the exact `uses:` ref, including tags, branches, and commit
+SHAs. This checks inputs and step outputs for actions outside the bundled dataset too. Different actions
+are fetched concurrently; repeated references are fetched once per invocation. An unreachable, missing,
+or invalid remote metadata file produces an action diagnostic. Expressions in `uses:`, Docker actions,
+and local actions are not fetched.
+
+```sh
+yactionlint -fetch-action-metadata
+GITHUB_TOKEN=... yactionlint -fetch-action-metadata -action-metadata-cache-dir /path/to/cache
+```
+
+Set `GITHUB_TOKEN` to use GitHub's authenticated contents API (including private repositories) and
+avoid anonymous API rate limits; without it, public metadata is fetched from `raw.githubusercontent.com`.
+Never put a token in a command-line flag. Successful YAML is cached across invocations under the
+user cache directory at `yactionlint/action-metadata`, or in `-action-metadata-cache-dir` if set.
+Commit-SHA metadata does not expire; mutable refs are refreshed after 24 hours. Existing cache
+directory permissions are not changed, and new cache files are private. This network option is
+CLI-only; the WebAssembly playground continues to use bundled metadata.
+
 ### Ignore some errors
 
 To ignore some errors, `-ignore` option offers to filter errors by messages using regular expression. The option is repeatable.

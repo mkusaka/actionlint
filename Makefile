@@ -28,6 +28,9 @@ else
 	RACE = -race
 endif
 
+# Fixture directories may share a basename with .out files; disable make's built-in copy rules.
+MAKEFLAGS += --no-builtin-rules
+
 
 all: build test lint
 

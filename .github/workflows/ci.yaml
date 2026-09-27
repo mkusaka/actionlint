@@ -38,6 +38,7 @@ jobs:
           & (Join-Path $directory 'shellcheck.exe') --version
           pip install pyflakes
           pyflakes --version
+        shell: pwsh
         if: ${{ runner.os == 'Windows' }}
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6

@@ -1,6 +1,6 @@
 # Unreleased
 
-- Repair CI after the v0.0.4 release: update `golang.org/x/net` past the reported HTML parser vulnerabilities, install ShellCheck on Windows runners without `winget`, use Alpine's numeric guest UID in the Docker image, and run downloader tests after release artifacts exist.
+- Repair CI after the v0.0.4 release: update `golang.org/x/net` past the reported HTML parser vulnerabilities, install ShellCheck on Windows runners without `winget`, use Alpine's numeric guest UID in the Docker image, run downloader tests after release artifacts exist, and refresh generated checks examples.
 
 <a id="v0.0.4"></a>
 # [v0.0.4](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.4) - 2026-09-28

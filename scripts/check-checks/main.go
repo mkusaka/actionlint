@@ -182,16 +182,18 @@ func (u *Updater) Update() {
 	isHeading := strings.HasPrefix(l, "## ")
 	isInputHeader := l == "Example input:"
 	isOutputHeader := l == "Output:"
+	isSkipExample := l == "<!-- No example -->"
 	isSkipOutput := l == "<!-- Skip update output -->"
 	isSkipPlaygroundLink := l == "<!-- Skip playground link -->"
 	isPlaygroundLink := strings.HasPrefix(l, "[Playground](") && strings.HasSuffix(l, ")")
-
 	// Validation
 	switch {
 	case isHeading:
 		u.expect(stateAnchor)
 	case isInputHeader:
 		u.expect(stateHeading, stateEnd)
+	case isSkipExample:
+		u.expect(stateHeading)
 	case isOutputHeader:
 		u.expect(stateAfterInput)
 	case isSkipOutput:
@@ -253,6 +255,8 @@ func (u *Updater) Update() {
 	case stateHeading:
 		if isInputHeader {
 			u.state(stateInputHeader, "Found example input header")
+		} else if isSkipExample {
+			u.state(stateEnd, "Finished section without example")
 		}
 	case stateInputHeader:
 		if l == "```yaml" {

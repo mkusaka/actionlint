@@ -82,6 +82,21 @@ func TestMainCheckQuietOK(t *testing.T) {
 	}
 }
 
+func TestUpdateAllowsOverviewSectionBeforeExample(t *testing.T) {
+	example, err := os.ReadFile("testdata/ok/minimal.out")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := append([]byte("Intro\n\n<a id=\"overview\"></a>\n## Overview\n<!-- No example -->\n\nText without an example.\n\n"), example...)
+	out, err := Update(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(string(source), string(out)); diff != "" {
+		t.Errorf("overview changed generated document: %s", diff)
+	}
+}
+
 func TestMainPrintHelp(t *testing.T) {
 	if err := Main([]string{"exe", "-help"}); err != nil {
 		t.Fatal(err)

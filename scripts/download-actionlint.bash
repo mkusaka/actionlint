@@ -16,7 +16,7 @@ function usage() {
     echo >&2
     echo 'VERSION:' >&2
     echo '   Version of actionlint to download. Version must be a specific version' >&2
-    echo '   "{major}.{minor}.{patch}" such as "1.7.13" or "latest". When "latest" is' >&2
+    echo '   "{major}.{minor}.{patch}" such as "0.0.1" or "latest". When "latest" is' >&2
     echo '   specified or this argument is omitted, the latest version will be selected.' >&2
     echo >&2
     echo 'EXAMPLE:' >&2
@@ -28,13 +28,13 @@ function usage() {
     echo >&2
     echo '      $ bash download-actionlint.bash latest /usr/bin' >&2
     echo >&2
-    echo '  - Download version 1.7.13 to the current directory' >&2
+    echo '  - Download version 0.0.1 to the current directory' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash 1.7.13' >&2
+    echo '      $ bash download-actionlint.bash 0.0.1' >&2
     echo >&2
-    echo '  - Download version 1.7.13 to /usr/bin' >&2
+    echo '  - Download version 0.0.1 to /usr/bin' >&2
     echo >&2
-    echo '      $ bash download-actionlint.bash 1.7.13 /usr/bin' >&2
+    echo '      $ bash download-actionlint.bash 0.0.1 /usr/bin' >&2
 }
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
@@ -43,7 +43,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 # Default value is updated manually on release
-version="1.7.13"
+version="0.0.1"
 if [ -n "$1" ]; then
     if [[ "$1" != 'latest' && "$1" != 'LATEST' ]]; then
         if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then

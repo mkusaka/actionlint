@@ -98,15 +98,15 @@ Note that the following targets are not tested since GitHub Actions doesn't supp
 The [`gh`][gh] command can download these binaries. For x86_64 Linux:
 
 ```sh
-gh release download --repo mkusaka/actionlint --pattern '*_linux_amd64.tar.gz' v1.7.13
-tar xf actionlint_1.7.13_linux_amd64.tar.gz
+gh release download --repo mkusaka/actionlint --pattern '*_linux_amd64.tar.gz' v0.0.1
+tar xf actionlint_0.0.1_linux_amd64.tar.gz
 ./actionlint -version
 ```
 
 Optionally, verify the [attestation][attestations] of the downloaded artifact:
 
 ```sh
-gh attestation verify -R mkusaka/actionlint actionlint_1.7.13_linux_amd64.tar.gz
+gh attestation verify -R mkusaka/actionlint actionlint_0.0.1_linux_amd64.tar.gz
 ```
 
 <a id="download-script"></a>
@@ -122,7 +122,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scri
 To install a specific release, pass its version as the first argument:
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) 1.7.13
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) 0.0.1
 ```
 
 This script downloads `actionlint` (or `actionlint.exe` on Windows) binary to the current working directory. When you need to put
@@ -184,7 +184,7 @@ Recent [Go][] toolchain is necessary to build actionlint from source. Last two m
 
 ```sh
 # Install the latest version from this fork
-go install github.com/mkusaka/actionlint/cmd/actionlint@latest
+go install github.com/mkusaka/actionlint/cmd/actionlint@v0.0.1
 
 # Install the head of this fork's main branch
 go install github.com/mkusaka/actionlint/cmd/actionlint@main

@@ -88,7 +88,7 @@ Install `actionlint` with `go install` or download [this fork's release binaries
 [the installation document][install] for details.
 
 ```sh
-go install github.com/mkusaka/actionlint/cmd/actionlint@latest
+go install github.com/mkusaka/actionlint/cmd/actionlint@v0.0.1
 ```
 
 Basically all you need to do is run the `actionlint` command in your repository. actionlint automatically detects workflows and

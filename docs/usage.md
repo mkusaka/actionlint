@@ -365,7 +365,7 @@ Add this to your `.pre-commit-config.yaml` in your repository:
 ---
 repos:
   - repo: https://github.com/mkusaka/actionlint
-    rev: v1.7.13
+    rev: v0.0.1
     hooks:
       - id: actionlint
 ```

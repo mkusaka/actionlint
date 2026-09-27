@@ -1,5 +1,5 @@
-<a id="v1.7.13"></a>
-# [v1.7.13](https://github.com/mkusaka/actionlint/releases/tag/v1.7.13) - 2026-09-28
+<a id="v0.0.1"></a>
+# [v0.0.1](https://github.com/mkusaka/actionlint/releases/tag/v0.0.1) - 2026-09-28
 
 - Fork of [rhysd/actionlint](https://github.com/rhysd/actionlint), with the Go module and repository automation moved to `mkusaka/actionlint`.
 - Accept parallel steps, `$/` self-repository action and reusable workflow references, `concurrency.queue`, composite-action `runs.env`, and the `merge_group.destroyed` activity type. upstream PR/issue: 694, 732, 654, 513, 740

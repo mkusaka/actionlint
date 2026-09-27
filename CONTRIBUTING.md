@@ -149,19 +149,13 @@ make fuzz FUZZ_FUNC=FuzzParse
 
 ## Make a new release
 
-When releasing v1.2.3 as example:
+For a fork release such as v0.0.2:
 
-1. Ensure all changes were already pushed to remote by checking `git push origin main` outputs `Everything up-to-date`
-2. Run `bash ./scripts/bump-version.bash 1.2.3`
-3. Wait until [the CI release job](.github/workflows/release.yaml) completes successfully:
-   - GoReleaser builds release binaries
-   - The CI job also updates the version string in `./scripts/download-actionlint.bash`
-4. Open the pre-release at [release page](https://github.com/mkusaka/actionlint/releases) with browser
-5. Write up release notes, uncheck pre-release checkbox and publish the new release
-6. Run `make CHANGELOG.md` to update [CHANGELOG.md](./CHANGELOG.md) and make a commit for the change. This step requires
-   [changelog-from-release](https://github.com/rhysd/changelog-from-release).
-7. Run `git pull` to merge upstream changes to local `main` branch and run `git push origin main`
-8. Update the playground by `./playground/deploy.bash` if it is not updated yet for the release
+1. Update [CHANGELOG.md](./CHANGELOG.md) with the changes in this fork and commit them on `main`.
+2. Run `bash ./scripts/bump-version.bash 0.0.2` to update the download script, commit, tag, and push.
+3. If the tag push does not start [the release workflow](.github/workflows/release.yaml), run
+   `gh workflow run release.yaml --ref v0.0.2`.
+4. Check that the workflow publishes the binaries and downloads one using `scripts/download-actionlint.bash`.
 
 ## How to generate the manual
 

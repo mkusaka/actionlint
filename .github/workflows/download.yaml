@@ -1,13 +1,8 @@
 name: Download script
 on:
-  push:
-    paths:
-      - scripts/download-yactionlint.bash
-      - scripts/test-download-yactionlint.bash
-  pull_request:
-    paths:
-      - scripts/download-yactionlint.bash
-      - scripts/test-download-yactionlint.bash
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - run: ./scripts/test-download-yactionlint.bash
         shell: bash

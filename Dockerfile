@@ -15,5 +15,6 @@ FROM alpine:${ALPINE_VER}
 COPY --from=builder /go/src/app/yactionlint /usr/local/bin/
 COPY --from=shellcheck /bin/shellcheck /usr/local/bin/shellcheck
 RUN apk add --no-cache py3-pyflakes
-USER guest
+# Alpine's guest user (UID 405, GID 100); numeric IDs also work without name resolution.
+USER 405:100
 ENTRYPOINT ["/usr/local/bin/yactionlint"]

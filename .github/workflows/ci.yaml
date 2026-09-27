@@ -30,7 +30,12 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
       - name: Install dependencies on Windows
         run: |
-          winget install --id koalaman.shellcheck --disable-interactivity --accept-package-agreements --accept-source-agreements
+          $archive = Join-Path $env:RUNNER_TEMP 'shellcheck-v0.10.0.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'shellcheck'
+          Invoke-WebRequest 'https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.zip' -OutFile $archive
+          Expand-Archive $archive -DestinationPath $directory
+          Add-Content -Path $env:GITHUB_PATH -Value $directory
+          & (Join-Path $directory 'shellcheck.exe') --version
           pip install pyflakes
           pyflakes --version
         if: ${{ runner.os == 'Windows' }}

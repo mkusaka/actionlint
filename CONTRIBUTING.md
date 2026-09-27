@@ -14,7 +14,7 @@ It's helpful to check if a similar patch has been rejected in the past before su
 
 To report a bug, please submit a new ticket on GitHub. It's helpful to search similar tickets before making it.
 
-https://github.com/rhysd/actionlint/issues/new
+https://github.com/mkusaka/actionlint/issues/new
 
 Providing a reproducible workflow content is much appreciated. If only a small snippet of workflow is provided or no
 input is provided at all, such issue tickets may get lower priority because they are occasionally time consuming to
@@ -24,7 +24,7 @@ investigate.
 
 Thank you for taking your time to improve this project. To send a patch, please submit a new pull request on GitHub.
 
-https://github.com/rhysd/actionlint/pulls
+https://github.com/mkusaka/actionlint/pulls
 
 Before submitting your PR, please ensure the following points:
 
@@ -64,12 +64,12 @@ around linking libc. `make build` does this by default.
 
 ## Testing
 
-[![CI](https://github.com/rhysd/actionlint/actions/workflows/ci.yaml/badge.svg)](https://github.com/rhysd/actionlint/actions/workflows/ci.yaml)
-[![Generate](https://github.com/rhysd/actionlint/actions/workflows/generate.yaml/badge.svg)](https://github.com/rhysd/actionlint/actions/workflows/generate.yaml)
-[![Problem Matchers](https://github.com/rhysd/actionlint/actions/workflows/matcher.yaml/badge.svg)](https://github.com/rhysd/actionlint/actions/workflows/matcher.yaml)
-[![Download script](https://github.com/rhysd/actionlint/actions/workflows/download.yaml/badge.svg)](https://github.com/rhysd/actionlint/actions/workflows/download.yaml)
-[![Release](https://github.com/rhysd/actionlint/actions/workflows/release.yaml/badge.svg)](https://github.com/rhysd/actionlint/actions/workflows/release.yaml)
-[![Codecov](https://codecov.io/gh/rhysd/actionlint/graph/badge.svg?token=CgcOo0m9oW)](https://codecov.io/gh/rhysd/actionlint)
+[![CI](https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/ci.yaml)
+[![Generate](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml)
+[![Problem Matchers](https://github.com/mkusaka/actionlint/actions/workflows/matcher.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/matcher.yaml)
+[![Download script](https://github.com/mkusaka/actionlint/actions/workflows/download.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/download.yaml)
+[![Release](https://github.com/mkusaka/actionlint/actions/workflows/release.yaml/badge.svg)](https://github.com/mkusaka/actionlint/actions/workflows/release.yaml)
+[![Codecov](https://codecov.io/gh/mkusaka/actionlint/graph/badge.svg)](https://codecov.io/gh/mkusaka/actionlint)
 
 Run the following command at the root of this repository.
 
@@ -151,22 +151,17 @@ make fuzz FUZZ_FUNC=FuzzParse
 
 When releasing v1.2.3 as example:
 
-1. Ensure all changes were already pushed to remote by checking `git push origin master` outputs `Everything up-to-date`
+1. Ensure all changes were already pushed to remote by checking `git push origin main` outputs `Everything up-to-date`
 2. Run `bash ./scripts/bump-version.bash 1.2.3`
 3. Wait until [the CI release job](.github/workflows/release.yaml) completes successfully:
-   - GoReleaser builds release binaries and make pre-release at GitHub and updates [Homebrew formula](./HomebrewFormula/actionlint.rb)
-   - The CI job also updates version string in `./scripts/download-actionlint.bash`
-4. Open the pre-release at [release page](https://github.com/rhysd/actionlint/releases) with browser
+   - GoReleaser builds release binaries
+   - The CI job also updates the version string in `./scripts/download-actionlint.bash`
+4. Open the pre-release at [release page](https://github.com/mkusaka/actionlint/releases) with browser
 5. Write up release notes, uncheck pre-release checkbox and publish the new release
 6. Run `make CHANGELOG.md` to update [CHANGELOG.md](./CHANGELOG.md) and make a commit for the change. This step requires
    [changelog-from-release](https://github.com/rhysd/changelog-from-release).
 7. Run `git pull` to merge upstream changes to local `main` branch and run `git push origin main`
 8. Update the playground by `./playground/deploy.bash` if it is not updated yet for the release
-
-> [!NOTE]
-> If you see workflow failure at releasing a new winget package, check the [fork repository](https://github.com/rhysd/winget-pkgs)
-> is up-to-date. If it is outdated, click 'Sync fork' button to update it to the latest. And re-run the failed job
-> again.
 
 ## How to generate the manual
 
@@ -226,7 +221,7 @@ automatically with `go generate`. The command runs [`generate-popular-actions`](
 The script also can detect new major releases of popular actions on GitHub by giving `-d` flag.
 
 The [`generate`](.github/workflows/generate.yaml) CI workflow weekly runs to detect new major releases and update
-`popular_actions.go`. Runs can be found [here](https://github.com/rhysd/actionlint/actions/workflows/generate.yaml).
+`popular_actions.go`. Runs can be found [here](https://github.com/mkusaka/actionlint/actions/workflows/generate.yaml).
 
 ### Maintain `all_webhooks.go`
 

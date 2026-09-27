@@ -278,6 +278,7 @@ var BuiltinGlobalVariableTypes = map[string]ExprType{
 		"graphql_url":               StringType{},
 		"head_ref":                  StringType{},
 		"job":                       StringType{},
+		"job_workflow_sha":          StringType{}, // upstream PR/issue: 671
 		"output":                    StringType{}, // Note: Undocumented
 		"path":                      StringType{},
 		"ref":                       StringType{},
@@ -322,7 +323,11 @@ var BuiltinGlobalVariableTypes = map[string]ExprType{
 				"ports":   NewMapObjectType(StringType{}),
 			}),
 		),
-		"status": StringType{},
+		"status":              StringType{},
+		"workflow_file_path":  StringType{},
+		"workflow_ref":        StringType{},
+		"workflow_repository": StringType{},
+		"workflow_sha":        StringType{},
 	}),
 	// https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
 	"steps": NewEmptyStrictObjectType(), // This value will be updated contextually

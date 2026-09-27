@@ -196,8 +196,7 @@ Preparing `actionlint` executable with the download script is recommended. See [
 more details. It sets an absolute file path of downloaded executable to `executable` output in order to use the executable in the
 following steps easily.
 
-Here is an example of simple workflow to run actionlint on GitHub Actions. Please ensure `shell: bash` since the default
-shell for Windows runners is `pwsh`.
+Here is an example workflow using this fork's release binary. Use `shell: bash` since the default shell for Windows runners is `pwsh`.
 
 ```yaml
 name: Lint GitHub Actions workflows
@@ -210,7 +209,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Download actionlint
         id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
         shell: bash
       - name: Check workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color
@@ -222,7 +221,7 @@ Or simply download the executable and run it in one step:
 ```yaml
 - name: Check workflow files
   run: |
-    bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
     ./actionlint -color
   shell: bash
 ```
@@ -236,7 +235,7 @@ shellcheck is [pre-installed on Ubuntu worker][preinstall-ubuntu].
 If you want to [annotate errors][ga-annotate-error] from actionlint on GitHub, consider using
 [Problem Matchers](#problem-matchers).
 
-If you prefer Docker image to running a downloaded executable, using [actionlint Docker image](#docker) is another option.
+If you prefer the existing upstream Docker image to a downloaded executable, using [the actionlint Docker image](#docker) is another option.
 
 ```yaml
 name: Lint GitHub Actions workflows
@@ -255,7 +254,7 @@ jobs:
 
 ## Online playground
 
-Thanks to WebAssembly, actionlint playground is available on your browser. It never sends any data to outside your browser.
+Thanks to WebAssembly, the upstream actionlint playground is available on your browser. It never sends any data outside your browser.
 
 https://rhysd.github.io/actionlint/
 
@@ -266,8 +265,8 @@ table moves a cursor to position of the error in the code editor.
 <a id="docker"></a>
 ## [Docker][docker] image
 
-[Official Docker image][docker-image] is available. The image contains `actionlint` executable and all dependencies (shellcheck
-and pyflakes).
+[The existing upstream Docker image][docker-image] contains `actionlint` and its dependencies (shellcheck and pyflakes).
+For this fork's syntax support, use the fork's binary or build a container from this repository.
 
 Available tags are:
 
@@ -338,7 +337,7 @@ Then enable the matcher using `add-matcher` command before running `actionlint` 
 - name: Check workflow files
   run: |
     echo "::add-matcher::.github/actionlint-matcher.json"
-    bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+    bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
     ./actionlint -color
   shell: bash
 ```
@@ -365,18 +364,17 @@ Add this to your `.pre-commit-config.yaml` in your repository:
 ```yaml
 ---
 repos:
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.12
+  - repo: https://github.com/mkusaka/actionlint
+    rev: v1.7.13
     hooks:
       - id: actionlint
 ```
 
-As alternatives to `actionlint` hook, `actionlint-docker` or `actionlint-system` hooks are available.
+The `actionlint-system` hook is also available when `actionlint` is installed separately.
 
 | Hook ID | Explanation |
 |-|-|
 | `actionlint` | Automatically installs `actionlint` command in isolated `$GOPATH` directory using [Go toolchain][go-install]. |
-| `actionlint-docker` | Automatically pulls [the actionlint Docker image](#docker). |
 | `actionlint-system` | Uses system-installed `actionlint` command. The command is necessary to be [installed manually](install.md). |
 
 ### VS Code
@@ -462,7 +460,7 @@ You can also see actionlint issues inline in VS Code via the [Trunk VS Code exte
 [problem-matchers]: https://github.com/actions/toolkit/blob/master/docs/problem-matchers.md
 [super-linter]: https://github.com/github/super-linter
 [super-linter-env-var]: https://github.com/super-linter/super-linter#environment-variables
-[actionlint-matcher]: https://raw.githubusercontent.com/rhysd/actionlint/main/.github/actionlint-matcher.json
+[actionlint-matcher]: https://raw.githubusercontent.com/mkusaka/actionlint/main/.github/actionlint-matcher.json
 [preinstall-ubuntu]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
 [pre-commit]: https://pre-commit.com
 [go-install]: https://go.dev/doc/install

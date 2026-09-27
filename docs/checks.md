@@ -3190,7 +3190,7 @@ test.yaml:0:0: could not parse as YAML: yaml: unknown anchor 'credentials' refer
 [Installation](install.md) | [Usage](usage.md) | [Configuration](config.md) | [Go API](api.md) | [References](reference.md)
 
 [yamllint]: https://github.com/adrienverge/yamllint
-[issue-form]: https://github.com/rhysd/actionlint/issues/new
+[issue-form]: https://github.com/mkusaka/actionlint/issues/new
 [syntax-doc]: https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
 [filter-pattern-doc]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
 [shellcheck]: https://github.com/koalaman/shellcheck
@@ -3222,8 +3222,8 @@ test.yaml:0:0: could not parse as YAML: yaml: unknown anchor 'credentials' refer
 [actions-cache]: https://github.com/actions/cache
 [permissions-doc]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions
 [perm-config-doc]: https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#permissions
-[generate-webhook-events]: https://github.com/rhysd/actionlint/tree/main/scripts/generate-webhook-events
-[generate-popular-actions]: https://github.com/rhysd/actionlint/tree/main/scripts/generate-popular-actions
+[generate-webhook-events]: https://github.com/mkusaka/actionlint/tree/main/scripts/generate-webhook-events
+[generate-popular-actions]: https://github.com/mkusaka/actionlint/tree/main/scripts/generate-popular-actions
 [issue-25]: https://github.com/rhysd/actionlint/issues/25
 [issue-40]: https://github.com/rhysd/actionlint/issues/40
 [security-doc]: https://docs.github.com/en/actions/reference/security/secure-use

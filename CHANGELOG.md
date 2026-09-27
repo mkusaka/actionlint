@@ -1,3 +1,12 @@
+<a id="v1.7.13"></a>
+# [v1.7.13](https://github.com/mkusaka/actionlint/releases/tag/v1.7.13) - 2026-09-28
+
+- Fork of [rhysd/actionlint](https://github.com/rhysd/actionlint), with the Go module and repository automation moved to `mkusaka/actionlint`.
+- Accept parallel steps, `$/` self-repository action and reusable workflow references, `concurrency.queue`, composite-action `runs.env`, and the `merge_group.destroyed` activity type. upstream PR/issue: 694, 732, 654, 513, 740
+- Accept `copilot-requests`, `code-quality`, and `vulnerability-alerts` permissions. upstream PR/issue: 689, 674, 666
+- Accept positive exponents and large integer literals in expressions, YAML `!!str` matrix values, mixed-trigger secrets, workflow-call job results, and newly documented workflow context properties. upstream PR/issue: 708, 733, 727, 703, 724, 696, 707, 671
+- Publish fork release binaries and download them with `scripts/download-actionlint.bash`. Homebrew cask and Docker publishing are not configured for this fork.
+
 <a id="v1.7.12"></a>
 # [v1.7.12](https://github.com/rhysd/actionlint/releases/tag/v1.7.12) - 2026-03-30
 

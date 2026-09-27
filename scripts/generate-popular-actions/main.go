@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rhysd/actionlint"
+	"github.com/mkusaka/actionlint"
 	"go.yaml.in/yaml/v4"
 )
 

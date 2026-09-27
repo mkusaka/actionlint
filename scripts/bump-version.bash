@@ -42,44 +42,27 @@ function sed_() {
     esac
 }
 
-pre_commit_hook='./.pre-commit-hooks.yaml'
 usage_doc='./docs/usage.md'
+download_script='./scripts/download-actionlint.bash'
 tag="v${version}"
-job_url='https://github.com/rhysd/actionlint/actions/workflows/release.yaml'
-playground_html='./playground/index.html'
-readme_doc='./README.md'
-man_ronn='./man/actionlint.1.ronn'
+job_url='https://github.com/mkusaka/actionlint/actions/workflows/release.yaml'
 
 echo "Bumping up version to ${version} (tag: ${tag})"
 
-# Update container image tag in pre-commit hook (See #116 for more details)
-echo "Updating $pre_commit_hook"
-sed_ "s/entry: docker\\.io\\/rhysd\\/actionlint:.*/entry: docker.io\\/rhysd\\/actionlint:${version}/" "$pre_commit_hook"
+echo "Updating $download_script"
+sed_ "s/version=\"[0-9]+\\.[0-9]+\\.[0-9]+\"/version=\"${version}\"/" "$download_script"
 
 echo "Updating $usage_doc"
 sed_ "\
     s/    rev: v[0-9]+\.[0-9]+\.[0-9]+/    rev: v${version}/; \
     s/ actionlint@[0-9]+\.[0-9]+\.[0-9]+/ actionlint@${version}/g; \
-    s/\`actionlint:[0-9]+\.[0-9]+\.[0-9]+\`/\`actionlint:${version}\`/g; \
     " "$usage_doc"
 
-echo "Updating $playground_html"
-sed_ "\
-    s/rhysd\/actionlint\/releases\/tag\/v[0-9]+\.[0-9]+\.[0-9]+/rhysd\/actionlint\/releases\/tag\/v${version}/; \
-    s/id=\"version\">v[0-9]+\.[0-9]+\.[0-9]+/id=\"version\">v${version}/; \
-    " "$playground_html"
-
-for f in "$readme_doc" "$man_ronn" "$playground_html"; do
-    echo "Updating document links in $f"
-    sed_ "s/\/rhysd\/actionlint\/blob\/v[0-9]+\.[0-9]+\.[0-9]+\/docs\//\/rhysd\/actionlint\/blob\/v${version}\/docs\//g" "$f"
-done
-
 echo 'Creating a version bump commit and a version tag'
-git add "$pre_commit_hook" "$usage_doc" "$playground_html" "$readme_doc" "$man_ronn"
+git add "$download_script" "$usage_doc"
 git commit -m "bump up version to ${tag}"
 git tag "$tag"
 
-# This is necessary since docker/build-push-action assumes the tagged commit was also pushed to main branch
 echo "Pushing bump commit to main"
 git push origin main
 

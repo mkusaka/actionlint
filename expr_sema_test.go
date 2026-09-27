@@ -73,8 +73,28 @@ func TestExprSemanticsCheckOK(t *testing.T) {
 			},
 		},
 		{
-			what:     "object property dereference of global variable",
-			input:    "job.container.network",
+			what:     "job workflow identity context properties",
+			input:    "job.workflow_file_path",
+			expected: StringType{},
+		},
+		{
+			what:     "job workflow reference context property",
+			input:    "job.workflow_ref",
+			expected: StringType{},
+		},
+		{
+			what:     "job workflow repository context property",
+			input:    "job.workflow_repository",
+			expected: StringType{},
+		},
+		{
+			what:     "job workflow SHA context property",
+			input:    "job.workflow_sha",
+			expected: StringType{},
+		},
+		{
+			what:     "github job workflow SHA context property",
+			input:    "github.job_workflow_sha",
 			expected: StringType{},
 		},
 		{

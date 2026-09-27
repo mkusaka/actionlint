@@ -55,6 +55,14 @@ func NewRuleExpression(actionsCache *LocalActionsCache, workflowCache *LocalReus
 func (rule *RuleExpression) VisitWorkflowPre(n *Workflow) error {
 	rule.checkString(n.Name, "")
 
+	workflowCallOnly := true
+	for _, e := range n.On {
+		if _, ok := e.(*WorkflowCallEvent); !ok {
+			workflowCallOnly = false
+			break
+		}
+	}
+
 	for _, e := range n.On {
 		switch e := e.(type) {
 		case *WebhookEvent:
@@ -155,7 +163,11 @@ func (rule *RuleExpression) VisitWorkflowPre(n *Workflow) error {
 					sty.Props[id] = StringType{}
 					rule.checkString(s.Description, "")
 				}
-				rule.secretsTy = sty
+				// workflow_call secrets are exhaustive only in a workflow_call-only workflow.
+				// upstream PR/issue: 703
+				if workflowCallOnly {
+					rule.secretsTy = sty
+				}
 			}
 
 			for _, o := range e.Outputs {
@@ -1018,6 +1030,7 @@ func (rule *RuleExpression) checkWorkflowCallOutputs(outputs map[string]*Workflo
 		}
 		props[n] = NewStrictObjectType(map[string]ExprType{
 			"outputs": o,
+			"result":  StringType{},
 		})
 	}
 	rule.jobsTy = NewStrictObjectType(props)
@@ -1059,6 +1072,11 @@ func (rule *RuleExpression) checkRawYAMLString(y *RawYAMLString) ExprType {
 			return AnyType{}
 		}
 		return ts[0].ty
+	}
+
+	// upstream PR/issue: 727
+	if y.StringTag {
+		return StringType{}
 	}
 
 	s := strings.TrimSpace(y.Value)

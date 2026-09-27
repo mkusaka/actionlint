@@ -799,6 +799,44 @@ func TestParseExpressionNumberLiteralsError(t *testing.T) {
 		})
 	}
 }
+func TestParseExpressionLargeIntegerLiterals(t *testing.T) {
+	testCases := []struct {
+		what  string
+		input string
+		want  float64
+	}{
+		{"max int32", "2147483647", 2147483647},
+		{"one past max int32", "2147483648", 2147483648},
+		{"one below min int32", "-2147483649", -2147483649},
+		{"max uint32", "4294967295", 4294967295},
+		{"hex above max int32", "0xffffffff", 0xffffffff},
+		{"milliseconds since epoch", "1700000000000", 1700000000000},
+		{"max safe JSON integer", "9007199254740991", 9007199254740991},
+		{"one past max int64", "9223372036854775808", 9223372036854775808},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.what, func(t *testing.T) {
+			n, err := NewExprParser().Parse(NewExprLexer(tc.input + "}}"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var have float64
+			switch n := n.(type) {
+			case *IntNode:
+				have = float64(n.Value)
+			case *FloatNode:
+				have = n.Value
+			default:
+				t.Fatalf("wanted a number literal node but have %T", n)
+			}
+			if have != tc.want {
+				t.Fatalf("wanted %v but have %v", tc.want, have)
+			}
+		})
+	}
+}
 
 func TestParseExpressionTokenPosition(t *testing.T) {
 	testCases := []struct {

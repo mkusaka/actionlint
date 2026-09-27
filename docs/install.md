@@ -2,6 +2,8 @@ Installation
 ============
 
 This document describes how to install [actionlint](../docs).
+Package-manager distributions listed below may still contain upstream builds; use this repository's releases or Go install for fork-specific changes.
+
 
 ## Windows
 
@@ -70,13 +72,6 @@ nix-env -iA nixpkgs.actionlint
 brew install actionlint
 ```
 
-Alternatively, rhysd/actionlint repository also provides its own Homebrew cask, which is automatically updated on new releases.
-If you prefer it, tap the repository and install `actionlint` package with `--cask` option.
-
-```sh
-brew tap "rhysd/actionlint" "https://github.com/rhysd/actionlint"
-brew install --cask actionlint
-```
 
 > [!WARNING]
 > Since the `actionlint` executable is unsigned, macOS displays a warning and tries to move it to the Trash. To allow it to run,
@@ -84,10 +79,10 @@ brew install --cask actionlint
 
 ## Prebuilt binaries
 
-Download an archive file from [the releases page][releases] for your platform, unarchive it and put the executable file to a
-directory in `$PATH`.
+Download an archive from [this fork's releases page][releases] for your platform, unarchive it,
+and put the executable file in a directory in `$PATH`.
 
-Prebuilt binaries are built at each releases by CI for the following OS and arch:
+Prebuilt binaries are built at each release by CI for the following OS and arch:
 
 - macOS (x86_64, arm64)
 - Linux (i386, x86_64, arm32, arm64)
@@ -100,37 +95,34 @@ Note that the following targets are not tested since GitHub Actions doesn't supp
 - Windows i386
 - FreeBSD i386, x86_64
 
-To install these binaries [`gh`][gh] command is useful. The following command is an example for x86_64 Linux.
+The [`gh`][gh] command can download these binaries. For x86_64 Linux:
 
 ```sh
-gh release download --repo rhysd/actionlint --pattern '*_linux_amd64.tar.gz' v1.7.11
-tar xf actionlint_1.7.11_linux_amd64.tar.gz
+gh release download --repo mkusaka/actionlint --pattern '*_linux_amd64.tar.gz' v1.7.13
+tar xf actionlint_1.7.13_linux_amd64.tar.gz
 ./actionlint -version
 ```
 
-Optionally you can verify the [attestation][attestations] of the downloaded artifact. This is highly recommended in terms of
-security. Note that the attestation support was introduced since actionlint v1.7.11.
+Optionally, verify the [attestation][attestations] of the downloaded artifact:
 
 ```sh
-gh attestation verify -R rhysd/actionlint actionlint_1.7.11_linux_amd64.tar.gz
+gh attestation verify -R mkusaka/actionlint actionlint_1.7.13_linux_amd64.tar.gz
 ```
 
 <a id="download-script"></a>
 ## Download script
 
-To install `actionlint` executable with one command, [the download script](../scripts/download-actionlint.bash) is available.
-It downloads the latest version of actionlint (`actionlint.exe` on Windows and `actionlint` on other OSes) to the current
-directory automatically. This is a recommended way if you install actionlint in some shell script.
+To install this fork's release with one command, run [the download script](../scripts/download-actionlint.bash). It downloads the latest
+binary (`actionlint.exe` on Windows and `actionlint` on other OSes) to the current directory.
 
 ```sh
-bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash)
 ```
 
-When you need to install specific version of actionlint, please give the version to the 1st command line argument. The following
-example installs v1.6.17.
+To install a specific release, pass its version as the first argument:
 
 ```sh
-bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.6.17
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) 1.7.13
 ```
 
 This script downloads `actionlint` (or `actionlint.exe` on Windows) binary to the current working directory. When you need to put
@@ -138,7 +130,7 @@ the downloaded binary to some other directory, please give the directory path to
 example installs the latest version to `/usr/bin`.
 
 ```sh
-bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest /usr/bin
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/actionlint/main/scripts/download-actionlint.bash) latest /usr/bin
 ```
 
 For the usage of actionlint on GitHub Actions, see [the usage document](usage.md#on-github-actions).
@@ -191,11 +183,11 @@ mise use -g actionlint@latest
 Recent [Go][] toolchain is necessary to build actionlint from source. Last two major versions of Go are supported.
 
 ```sh
-# Install the latest stable version
-go install github.com/rhysd/actionlint/cmd/actionlint@latest
+# Install the latest version from this fork
+go install github.com/mkusaka/actionlint/cmd/actionlint@latest
 
-# Install the head of the main branch
-go install github.com/rhysd/actionlint/cmd/actionlint@main
+# Install the head of this fork's main branch
+go install github.com/mkusaka/actionlint/cmd/actionlint@main
 ```
 
 ---
@@ -204,7 +196,7 @@ go install github.com/rhysd/actionlint/cmd/actionlint@main
 
 [formula]: https://formulae.brew.sh/formula/actionlint
 [homebrew]: https://brew.sh/
-[releases]: https://github.com/rhysd/actionlint/releases
+[releases]: https://github.com/mkusaka/actionlint/releases
 [gh]: https://docs.github.com/en/github-cli/github-cli/about-github-cli
 [attestations]: https://docs.github.com/en/actions/concepts/security/artifact-attestations
 [Go]: https://golang.org/

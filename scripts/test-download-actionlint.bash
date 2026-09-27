@@ -33,9 +33,9 @@ fi
 rm -f ./actionlint
 
 # Specify only version
-bash "$script" '1.6.12'
+bash "$script" '1.7.13'
 out="$(./actionlint -version | head -n 1)"
-if [[ "$out" != '1.6.12' ]]; then
+if [[ "$out" != '1.7.13' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi
@@ -53,9 +53,9 @@ rm -rf ./test1
 
 # Specify both version and a download directory
 mkdir ./test2
-bash "$script" '1.6.12' ./test2
+bash "$script" '1.7.13' ./test2
 out="$(./test2/actionlint -version | head -n 1)"
-if [[ "$out" != '1.6.12' ]]; then
+if [[ "$out" != '1.7.13' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -346,13 +347,13 @@ func TestRemoteActionsCachePersistsFetchedMetadata(t *testing.T) {
 	}
 	if info, err := os.Stat(dir); err != nil {
 		t.Fatal(err)
-	} else if got := info.Mode().Perm(); got != 0o700 {
+	} else if got := info.Mode().Perm(); runtime.GOOS != "windows" && got != 0o700 {
 		t.Errorf("cache directory mode was %o, wanted 700", got)
 	}
 	cachePath := cache.metadataCachePath(spec, "action.yaml")
 	if info, err := os.Stat(cachePath); err != nil {
 		t.Fatal(err)
-	} else if got := info.Mode().Perm(); got != 0o600 {
+	} else if got := info.Mode().Perm(); runtime.GOOS != "windows" && got != 0o600 {
 		t.Errorf("cache file mode was %o, wanted 600", got)
 	}
 

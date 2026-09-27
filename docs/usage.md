@@ -57,8 +57,9 @@ avoid anonymous API rate limits; without it, public metadata is fetched from `ra
 Never put a token in a command-line flag. Successful YAML is cached across invocations under the
 user cache directory at `yactionlint/action-metadata`, or in `-action-metadata-cache-dir` if set.
 Commit-SHA metadata does not expire; mutable refs are refreshed after 24 hours. Existing cache
-directory permissions are not changed, and new cache files are private. This network option is
-CLI-only; the WebAssembly playground continues to use bundled metadata.
+directory permissions are not changed. On Unix, new directories and files use modes 0700 and 0600;
+on Windows, files inherit the directory ACL, so choose a user-private cache directory for private
+repositories. This network option is CLI-only; the WebAssembly playground uses bundled metadata.
 
 ### Ignore some errors
 

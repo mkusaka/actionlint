@@ -83,7 +83,7 @@ func TestMainCheckQuietOK(t *testing.T) {
 }
 
 func TestUpdateAllowsOverviewSectionBeforeExample(t *testing.T) {
-	example, err := os.ReadFile("testdata/ok/minimal.out")
+	example, err := os.ReadFile("testdata/ok/skip_output_and_playground.out")
 	if err != nil {
 		t.Fatal(err)
 	}

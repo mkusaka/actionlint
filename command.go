@@ -35,9 +35,9 @@ func printUsageHeader(out io.Writer) {
 
 	fmt.Fprintf(out, `Usage: yactionlint [FLAGS] [FILES...] [-]
 
-  yactionlint is a linter for GitHub Actions workflow files.
+  yactionlint checks GitHub Actions workflows and action metadata.
 
-  To check all YAML files in current repository, just run yactionlint without
+  To check all workflow files in the current repository, run yactionlint without
   arguments. It automatically finds the nearest '.github/workflows' directory:
 
     $ yactionlint
@@ -46,10 +46,15 @@ func printUsageHeader(out io.Writer) {
 
     $ yactionlint file1.yaml file2.yaml
 
-  To check content which is not saved in file yet (e.g. output from some
-  command), pass - argument. It reads stdin and checks it as workflow file:
+  To check content from stdin, pass -. It is treated as a workflow by default:
 
     $ yactionlint -
+
+  To check action metadata, pass its action.yml/action.yaml file or use
+  -input-format=action for stdin:
+
+    $ yactionlint .github/actions/my-action/action.yml
+    $ yactionlint -input-format=action -
 
   To serialize errors into JSON, use -format option. It allows to format error
   messages flexibly with Go template syntax.

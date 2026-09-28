@@ -88,7 +88,7 @@ Install `yactionlint` with `go install` or download [this fork's release binarie
 [the installation document][install] for details.
 
 ```sh
-go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.5
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.6
 ```
 
 Basically all you need to do is run the `yactionlint` command in your repository. yactionlint automatically detects workflows and

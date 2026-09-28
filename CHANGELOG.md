@@ -1,5 +1,10 @@
 # Unreleased
 
+<a id="v0.0.6"></a>
+# [v0.0.6](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.6) - 2026-09-28
+
+- Regenerate the checks documentation for the updated YAML anchor diagnostic so CI lint passes.
+
 <a id="v0.0.5"></a>
 # [v0.0.5](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.5) - 2026-09-28
 

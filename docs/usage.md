@@ -61,6 +61,13 @@ directory permissions are not changed. On Unix, new directories and files use mo
 on Windows, files inherit the directory ACL, so choose a user-private cache directory for private
 repositories. This network option is CLI-only; the WebAssembly playground uses bundled metadata.
 
+### Enable optional repository policies
+
+Checks such as required or pinned actions, explicit permissions, job timeouts, explicit `if:` expressions,
+and a `secrets` allow-list are opt-in. Run `yactionlint -init-config` to create `.github/yactionlint.yaml`,
+then enable only the policies you need. For available keys and defaults, see [configuration](config.md#configuration-file).
+Use `-config-file=path/to/yactionlint.yaml` if the file is elsewhere.
+
 ### Ignore some errors
 
 To ignore some errors, `-ignore` option offers to filter errors by messages using regular expression. The option is repeatable.

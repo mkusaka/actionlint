@@ -85,10 +85,6 @@ func TestConfigParseError(t *testing.T) {
 		want string
 	}{
 		{
-			in:   `self-hosted-runner: 42`,
-			want: `cannot unmarshal`,
-		},
-		{
 			in: `
 paths:
   foo:

@@ -273,13 +273,13 @@ func (c *LocalActionsCache) FindMetadata(spec string) (*ActionMetadata, bool, er
 	if err := yaml.Unmarshal(b, &meta); err != nil {
 		c.writeCache(key, nil) // Remember action was invalid
 
-		// Unwrap type error when a single type error occurs to simplify the error message
+		// Unwrap a single construction error to avoid an unnecessary collection header.
 		var m string
-		if te, ok := err.(*yaml.TypeError); ok {
-			if len(te.Errors) == 1 {
-				m = te.Errors[0].Error()
-			} else {
-				m = strings.ReplaceAll(te.Error(), "\n", "")
+		if le, ok := err.(*yaml.LoadErrors); ok && len(le.Errors) == 1 {
+			e := le.Errors[0]
+			m = e.Message
+			if e.Mark.Line > 0 {
+				m = fmt.Sprintf("line %d: %s", e.Mark.Line, m)
 			}
 		} else {
 			m = err.Error()

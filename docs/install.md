@@ -53,15 +53,15 @@ Note that the following targets are not tested since GitHub Actions doesn't supp
 The [`gh`][gh] command can download these binaries. For x86_64 Linux:
 
 ```sh
-gh release download --repo mkusaka/yactionlint --pattern '*_linux_amd64.tar.gz' v0.0.6
-tar xf yactionlint_0.0.6_linux_amd64.tar.gz
+gh release download --repo mkusaka/yactionlint --pattern '*_linux_amd64.tar.gz' v0.0.7
+tar xf yactionlint_0.0.7_linux_amd64.tar.gz
 ./yactionlint -version
 ```
 
 Optionally, verify the [attestation][attestations] of the downloaded artifact:
 
 ```sh
-gh attestation verify -R mkusaka/yactionlint yactionlint_0.0.6_linux_amd64.tar.gz
+gh attestation verify -R mkusaka/yactionlint yactionlint_0.0.7_linux_amd64.tar.gz
 ```
 
 <a id="download-script"></a>
@@ -77,7 +77,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scr
 To install a specific release, pass its version as the first argument:
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash) 0.0.6
+bash <(curl -fsSL https://raw.githubusercontent.com/mkusaka/yactionlint/main/scripts/download-yactionlint.bash) 0.0.7
 ```
 
 This script downloads `yactionlint` (or `yactionlint.exe` on Windows) binary to the current working directory. When you need to put
@@ -118,11 +118,11 @@ mise use -g actionlint@latest
 
 ## Build from source
 
-Recent [Go][] toolchain is necessary to build yactionlint from source. Last two major versions of Go are supported.
+Go 1.26 or 1.27 is required to build yactionlint from source. The last two major versions of Go are supported.
 
 ```sh
-# Install yactionlint v0.0.6
-go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.6
+# Install yactionlint v0.0.7
+go install github.com/mkusaka/yactionlint/cmd/yactionlint@v0.0.7
 
 # Install the head of yactionlint's main branch
 go install github.com/mkusaka/yactionlint/cmd/yactionlint@main

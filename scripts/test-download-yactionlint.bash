@@ -33,9 +33,9 @@ fi
 rm -f ./yactionlint
 
 # Specify only version
-bash "$script" '0.0.6'
+bash "$script" '0.0.7'
 out="$(./yactionlint -version | head -n 1)"
-if [[ "$out" != '0.0.6' ]]; then
+if [[ "$out" != '0.0.7' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi
@@ -53,9 +53,9 @@ rm -rf ./test1
 
 # Specify both version and a download directory
 mkdir ./test2
-bash "$script" '0.0.6' ./test2
+bash "$script" '0.0.7' ./test2
 out="$(./test2/yactionlint -version | head -n 1)"
-if [[ "$out" != '0.0.6' ]]; then
+if [[ "$out" != '0.0.7' ]]; then
     echo "Unexpected version: '${out}'" 1>&2
     exit 1
 fi

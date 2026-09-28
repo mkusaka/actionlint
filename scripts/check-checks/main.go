@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -317,6 +318,33 @@ func Update(in []byte) ([]byte, error) {
 	return u.End()
 }
 
+var playgroundLink = regexp.MustCompile(`\[Playground\]\(https://rhysd\.github\.io/actionlint/#[A-Za-z0-9+/=]+\)`)
+
+// A Go upgrade can change zlib's byte stream without changing the permalink's YAML.
+func normalizePlaygroundLinks(doc []byte) []byte {
+	return playgroundLink.ReplaceAllFunc(doc, func(link []byte) []byte {
+		start := bytes.LastIndexByte(link, '#') + 1
+		encoded := link[start : len(link)-1]
+		compressed, err := base64.StdEncoding.DecodeString(string(encoded))
+		if err != nil {
+			return link
+		}
+		r, err := zlib.NewReader(bytes.NewReader(compressed))
+		if err != nil {
+			return link
+		}
+		src, err := io.ReadAll(r)
+		closeErr := r.Close()
+		if err != nil || closeErr != nil {
+			return link
+		}
+		out := make([]byte, 0, start+base64.StdEncoding.EncodedLen(len(src))+1)
+		out = append(out, link[:start]...)
+		out = base64.StdEncoding.AppendEncode(out, src)
+		return append(out, ')')
+	})
+}
+
 var stderr io.Writer = os.Stderr
 
 func Main(args []string) error {
@@ -357,7 +385,7 @@ func Main(args []string) error {
 		return err
 	}
 
-	if bytes.Equal(in, out) {
+	if bytes.Equal(in, out) || bytes.Equal(normalizePlaygroundLinks(in), normalizePlaygroundLinks(out)) {
 		log.Printf("Do nothing because there is no update in %q", path)
 		return nil
 	}

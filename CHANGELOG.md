@@ -1,5 +1,12 @@
 # Unreleased
 
+<a id="v0.0.7"></a>
+# [v0.0.7](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.7) - 2026-09-28
+
+- Build release binaries and playground with Go 1.27; support Go 1.26 and 1.27 in CI, requiring Go 1.26 or newer to build from source.
+- Upgrade `golang.org/x/net`, `x/sync`, and `x/sys` to the newest versions requiring Go 1.26.
+- Keep generated checks-document links stable across Go versions despite changes to zlib compression.
+
 <a id="v0.0.6"></a>
 # [v0.0.6](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.6) - 2026-09-28
 

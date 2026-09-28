@@ -57,7 +57,7 @@ func TestMainGenerateOK(t *testing.T) {
 
 	want := must(os.ReadFile(filepath.FromSlash("testdata/ok/minimal.out")))
 	have := must(os.ReadFile(path))
-	if diff := cmp.Diff(want, have); diff != "" {
+	if diff := cmp.Diff(normalizePlaygroundLinks(want), normalizePlaygroundLinks(have)); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -156,7 +156,7 @@ func TestUpdateOK(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := must(os.ReadFile(out))
-			if diff := cmp.Diff(want, have); diff != "" {
+			if diff := cmp.Diff(normalizePlaygroundLinks(want), normalizePlaygroundLinks(have)); diff != "" {
 				t.Fatal(diff)
 			}
 		})

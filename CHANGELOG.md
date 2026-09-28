@@ -1,6 +1,7 @@
 # Unreleased
 
 - Repair CI after the v0.0.4 release: update `golang.org/x/net` past the reported HTML parser vulnerabilities, install ShellCheck on Windows runners without `winget`, use Alpine's numeric guest UID in the Docker image, run downloader tests after release artifacts exist, and refresh generated checks examples.
+- Check expression integer literals against the native `int` bounds before conversion, retaining large literals as floating-point values on 32-bit platforms. Resolves CodeQL integer-conversion alerts #1 and #2.
 
 <a id="v0.0.4"></a>
 # [v0.0.4](https://github.com/mkusaka/yactionlint/releases/tag/v0.0.4) - 2026-09-28

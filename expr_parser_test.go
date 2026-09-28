@@ -2,6 +2,8 @@ package actionlint
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -841,6 +843,32 @@ func TestParseExpressionLargeIntegerLiterals(t *testing.T) {
 	_, err := NewExprParser().Parse(NewExprLexer(strings.Repeat("9", 310) + "}}"))
 	if err == nil {
 		t.Fatal("integer literal larger than float64 range was accepted")
+	}
+}
+
+func TestParseExpressionNativeIntegerBounds(t *testing.T) {
+	for _, want := range []int{math.MinInt, math.MaxInt} {
+		literal := strconv.FormatInt(int64(want), 10)
+		node, err := NewExprParser().Parse(NewExprLexer(literal + "}}"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, ok := node.(*IntNode)
+		if !ok || got.Value != want {
+			t.Errorf("%s: wanted integer %d, got %#v", literal, want, node)
+		}
+	}
+
+	if strconv.IntSize == 32 {
+		for _, literal := range []string{"-2147483649", "2147483648"} {
+			node, err := NewExprParser().Parse(NewExprLexer(literal + "}}"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, ok := node.(*FloatNode); !ok {
+				t.Errorf("%s: out-of-range native integer must stay numeric, got %#v", literal, node)
+			}
+		}
 	}
 }
 

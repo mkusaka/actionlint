@@ -3,6 +3,7 @@ package actionlint
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -143,7 +144,7 @@ func (p *ExprParser) parseInt() ExprNode {
 	i, err := strconv.ParseInt(t.Value, 0, 64)
 	if err == nil {
 		p.next() // eat int
-		if int64(int(i)) == i {
+		if i >= math.MinInt && i <= math.MaxInt {
 			return &IntNode{int(i), t}
 		}
 		return &FloatNode{float64(i), t}
